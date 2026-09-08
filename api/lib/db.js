@@ -1,46 +1,143 @@
 const fs = require('fs');
-const GEMINI_MODEL = 'gemini-3.6-flash';
 const path = require('path');
 
-// Ensure data directory exists for JSON DB persistence (uses /tmp on Vercel)
-const DATA_DIR = process.env.VERCEL ? path.join('/tmp', 'data') : path.join(__dirname, '..', '..', 'data');
-const DB_FILE = path.join(DATA_DIR, 'sessions.json');
+const GEMINI_MODEL = 'gemini-3.6-flash';
+
+// ══════════════════════════════════════════════════════════════
+//  STORAGE LAYER
+//  - Primary: Upstash Redis REST API (persistent, shared across
+//             all Vercel serverless instances)
+//  - Fallback: Local JSON file (for local development)
+// ══════════════════════════════════════════════════════════════
+
+const REDIS_URL   = process.env.UPSTASH_REDIS_REST_URL;
+const REDIS_TOKEN = process.env.UPSTASH_REDIS_REST_TOKEN;
+const USE_REDIS   = !!(REDIS_URL && REDIS_TOKEN);
+
+// Session TTL: 90 hari
+const SESSION_TTL_SECONDS = 60 * 60 * 24 * 90;
+const SESSION_KEY  = (id) => `ratakiri:session:${id}`;
+const INDEX_KEY    = 'ratakiri:sessions:index';
+
+// ── Redis helpers ──────────────────────────────────────────────
+async function redisExec(...args) {
+  const res = await fetch(REDIS_URL, {
+    method: 'POST',
+    headers: {
+      Authorization: `Bearer ${REDIS_TOKEN}`,
+      'Content-Type': 'application/json'
+    },
+    body: JSON.stringify(args)
+  });
+  if (!res.ok) {
+    const text = await res.text();
+    throw new Error(`Upstash Redis error ${res.status}: ${text}`);
+  }
+  const json = await res.json();
+  return json.result;
+}
+
+async function redisPipeline(commands) {
+  const res = await fetch(`${REDIS_URL}/pipeline`, {
+    method: 'POST',
+    headers: {
+      Authorization: `Bearer ${REDIS_TOKEN}`,
+      'Content-Type': 'application/json'
+    },
+    body: JSON.stringify(commands)
+  });
+  const json = await res.json();
+  return json; // array of { result }
+}
+
+// ── Redis session operations ──────────────────────────────────
+async function redisGetSession(sessionId) {
+  const raw = await redisExec('GET', SESSION_KEY(sessionId));
+  return raw ? JSON.parse(raw) : null;
+}
+
+async function redisSetSession(session) {
+  const sessionId = session.session_id;
+  const score = new Date(session.updated_at).getTime();
+  await redisPipeline([
+    ['SET', SESSION_KEY(sessionId), JSON.stringify(session), 'EX', SESSION_TTL_SECONDS],
+    ['ZADD', INDEX_KEY, score, sessionId]
+  ]);
+}
+
+async function redisGetAllSessions() {
+  // Newest first: ZREVRANGE returns IDs sorted by score desc
+  const ids = await redisExec('ZREVRANGE', INDEX_KEY, 0, 199);
+  if (!ids || ids.length === 0) return [];
+
+  // Pipeline GET for all sessions
+  const commands = ids.map(id => ['GET', SESSION_KEY(id)]);
+  const results  = await redisPipeline(commands);
+
+  return results
+    .map(r => (r.result ? JSON.parse(r.result) : null))
+    .filter(Boolean);
+}
+
+// ── File fallback (local dev) ─────────────────────────────────
+const DATA_DIR = path.join(__dirname, '..', '..', 'data');
+const DB_FILE  = path.join(DATA_DIR, 'sessions.json');
 
 function ensureDbExists() {
   try {
-    if (!fs.existsSync(DATA_DIR)) {
-      fs.mkdirSync(DATA_DIR, { recursive: true });
-    }
-    if (!fs.existsSync(DB_FILE)) {
-      fs.writeFileSync(DB_FILE, JSON.stringify({}), 'utf8');
-    }
-  } catch (err) {
-    console.error('Error ensuring DB directory:', err);
+    if (!fs.existsSync(DATA_DIR)) fs.mkdirSync(DATA_DIR, { recursive: true });
+    if (!fs.existsSync(DB_FILE))  fs.writeFileSync(DB_FILE, '{}', 'utf8');
+  } catch (e) {
+    console.error('DB init error:', e.message);
   }
 }
 
-function readDb() {
+function fileReadDb() {
   ensureDbExists();
-  try {
-    const data = fs.readFileSync(DB_FILE, 'utf8');
-    return JSON.parse(data || '{}');
-  } catch (err) {
-    console.error('Error reading database:', err);
-    return {};
-  }
+  try { return JSON.parse(fs.readFileSync(DB_FILE, 'utf8') || '{}'); }
+  catch (e) { return {}; }
+}
+
+function fileWriteDb(data) {
+  ensureDbExists();
+  try { fs.writeFileSync(DB_FILE, JSON.stringify(data, null, 2), 'utf8'); }
+  catch (e) { console.error('DB write error:', e.message); }
+}
+
+// ══════════════════════════════════════════════════════════════
+//  PUBLIC API — same interface whether using Redis or file
+// ══════════════════════════════════════════════════════════════
+
+function readDb() {
+  // Sync fallback only (used by legacy callers); Redis is async
+  return fileReadDb();
 }
 
 function writeDb(data) {
-  ensureDbExists();
-  try {
-    fs.writeFileSync(DB_FILE, JSON.stringify(data, null, 2), 'utf8');
-  } catch (err) {
-    console.error('Error writing database:', err);
-  }
+  fileWriteDb(data);
 }
 
-function getSession(sessionId) {
-  const db = readDb();
+// getSession: creates session if not exists
+async function getSession(sessionId) {
+  if (USE_REDIS) {
+    let session = await redisGetSession(sessionId);
+    if (!session) {
+      session = {
+        session_id: sessionId,
+        count: 0,
+        history: [],
+        current_html: '',
+        summary: '',
+        created_at: new Date().toISOString(),
+        updated_at: new Date().toISOString()
+      };
+      await redisSetSession(session);
+    }
+    return session;
+  }
+
+  // File fallback
+  const db = fileReadDb();
   if (!db[sessionId]) {
     db[sessionId] = {
       session_id: sessionId,
@@ -51,49 +148,74 @@ function getSession(sessionId) {
       created_at: new Date().toISOString(),
       updated_at: new Date().toISOString()
     };
-    writeDb(db);
+    fileWriteDb(db);
   }
   return db[sessionId];
 }
 
-function updateSession(sessionId, updateData) {
-  const db = readDb();
-  if (db[sessionId]) {
-    db[sessionId] = {
-      ...db[sessionId],
-      ...updateData,
-      updated_at: new Date().toISOString()
-    };
-    writeDb(db);
+// updateSession: merges updateData into existing session
+async function updateSession(sessionId, updateData) {
+  if (USE_REDIS) {
+    let session = await redisGetSession(sessionId);
+    if (!session) {
+      session = {
+        session_id: sessionId,
+        count: 0, history: [], current_html: '', summary: '',
+        created_at: new Date().toISOString()
+      };
+    }
+    session = { ...session, ...updateData, updated_at: new Date().toISOString() };
+    await redisSetSession(session);
+    return session;
   }
+
+  // File fallback
+  const db = fileReadDb();
+  db[sessionId] = {
+    ...(db[sessionId] || { session_id: sessionId, count: 0, history: [], current_html: '', summary: '', created_at: new Date().toISOString() }),
+    ...updateData,
+    updated_at: new Date().toISOString()
+  };
+  fileWriteDb(db);
   return db[sessionId];
 }
 
+// getAllSessions: for admin dashboard
+async function getAllSessions() {
+  if (USE_REDIS) {
+    return await redisGetAllSessions();
+  }
+  const db = fileReadDb();
+  return Object.values(db).sort((a, b) => new Date(b.updated_at) - new Date(a.updated_at));
+}
+
+// ══════════════════════════════════════════════════════════════
+//  HTML CLEANUP
+// ══════════════════════════════════════════════════════════════
 function cleanHtmlResponse(rawText) {
   if (!rawText) return '';
   let cleaned = rawText.trim();
   cleaned = cleaned.replace(/^```html\s*/i, '');
   cleaned = cleaned.replace(/^```\s*/i, '');
   cleaned = cleaned.replace(/\s*```$/i, '');
-  
+
   const docTypeIdx = cleaned.toLowerCase().indexOf('<!doctype html>');
   if (docTypeIdx !== -1) {
     cleaned = cleaned.substring(docTypeIdx);
   } else {
     const htmlIdx = cleaned.toLowerCase().indexOf('<html');
-    if (htmlIdx !== -1) {
-      cleaned = cleaned.substring(htmlIdx);
-    }
+    if (htmlIdx !== -1) cleaned = cleaned.substring(htmlIdx);
   }
-  
+
   const endHtmlIdx = cleaned.toLowerCase().lastIndexOf('</html>');
-  if (endHtmlIdx !== -1) {
-    cleaned = cleaned.substring(0, endHtmlIdx + 7);
-  }
-  
+  if (endHtmlIdx !== -1) cleaned = cleaned.substring(0, endHtmlIdx + 7);
+
   return cleaned.trim();
 }
 
+// ══════════════════════════════════════════════════════════════
+//  FALLBACK HTML (when API key missing or Gemini unreachable)
+// ══════════════════════════════════════════════════════════════
 function generateFallbackHtml(prompt, previousHtml) {
   const sanitize = (str) => String(str || '').replace(/[&<>"']/g, (m) => ({
     '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;'
@@ -113,8 +235,8 @@ function generateFallbackHtml(prompt, previousHtml) {
   <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;600;700;800&display=swap" rel="stylesheet">
   <style>
     body { font-family: 'Plus Jakarta Sans', sans-serif; }
-    .glass-card { background: rgba(255, 255, 255, 0.05); backdrop-filter: blur(16px); border: 1px solid rgba(255, 255, 255, 0.1); }
-    .hero-gradient { background: radial-gradient(circle at top right, rgba(99, 102, 241, 0.25), transparent 50%), radial-gradient(circle at bottom left, rgba(236, 72, 153, 0.2), transparent 50%); }
+    .glass-card { background: rgba(255,255,255,0.05); backdrop-filter: blur(16px); border: 1px solid rgba(255,255,255,0.1); }
+    .hero-gradient { background: radial-gradient(circle at top right, rgba(99,102,241,0.25), transparent 50%), radial-gradient(circle at bottom left, rgba(236,72,153,0.2), transparent 50%); }
   </style>
 </head>
 <body class="bg-slate-950 text-slate-100 min-h-screen hero-gradient flex flex-col justify-between">
@@ -127,59 +249,38 @@ function generateFallbackHtml(prompt, previousHtml) {
       <nav class="hidden md:flex items-center gap-8 text-sm font-medium text-slate-300">
         <a href="#beranda" class="hover:text-indigo-400 transition">Beranda</a>
         <a href="#fitur" class="hover:text-indigo-400 transition">Layanan</a>
-        <a href="#tentang" class="hover:text-indigo-400 transition">Tentang Kami</a>
-        <a href="#kontak" class="bg-indigo-600 hover:bg-indigo-500 text-white px-5 py-2.5 rounded-lg font-semibold shadow-md shadow-indigo-600/25 transition">Hubungi Sales</a>
+        <a href="#kontak" class="bg-indigo-600 hover:bg-indigo-500 text-white px-5 py-2.5 rounded-lg font-semibold transition">Hubungi Sales</a>
       </nav>
     </div>
   </header>
-
   <main class="max-w-7xl mx-auto px-6 py-16 flex-grow flex flex-col justify-center">
     <div class="grid grid-cols-1 lg:grid-cols-2 gap-12 items-center">
       <div class="space-y-6">
         <div class="inline-flex items-center gap-2 px-3.5 py-1.5 rounded-full bg-indigo-500/10 border border-indigo-500/30 text-indigo-400 text-xs font-semibold uppercase tracking-wider">
           <span>✨</span> Vibe Coding Live Preview
         </div>
-        <h1 class="text-4xl sm:text-5xl lg:text-6xl font-extrabold tracking-tight text-white leading-tight">
+        <h1 class="text-5xl font-extrabold tracking-tight text-white leading-tight">
           Solusi Digital <span class="bg-gradient-to-r from-indigo-400 via-purple-400 to-pink-400 bg-clip-text text-transparent">${businessName}</span>
         </h1>
         <p class="text-slate-300 text-lg leading-relaxed">
-          Rancangan desain profesional yang dirancang khusus berdasarkan instruksi: <em class="text-indigo-300">"${cleanPrompt}"</em>. Siap meningkatkan kredibilitas bisnis Anda secara online!
+          Rancangan berdasarkan: <em class="text-indigo-300">"${cleanPrompt}"</em>
         </p>
         <div class="flex flex-wrap gap-4 pt-4">
-          <a href="#kontak" class="bg-gradient-to-r from-indigo-500 to-purple-600 hover:from-indigo-600 hover:to-purple-700 text-white px-8 py-3.5 rounded-xl font-bold text-base shadow-xl shadow-indigo-500/25 transition transform hover:-translate-y-0.5">Pesan Sekarang &rarr;</a>
-          <a href="#fitur" class="glass-card hover:bg-slate-800/80 text-white px-8 py-3.5 rounded-xl font-semibold text-base border border-slate-700 transition">Lihat Fitur Lengkap</a>
-        </div>
-      </div>
-      <div class="glass-card p-6 rounded-2xl border border-slate-800 shadow-2xl relative overflow-hidden">
-        <div class="absolute -top-12 -right-12 w-40 h-40 bg-indigo-500/20 rounded-full blur-3xl"></div>
-        <div class="bg-slate-900 rounded-xl p-6 border border-slate-800 space-y-4">
-          <div class="flex items-center justify-between border-b border-slate-800 pb-4">
-            <div class="flex items-center gap-2">
-              <span class="w-3 h-3 rounded-full bg-red-500"></span>
-              <span class="w-3 h-3 rounded-full bg-yellow-500"></span>
-              <span class="w-3 h-3 rounded-full bg-green-500"></span>
-            </div>
-            <span class="text-xs font-mono text-slate-500">Preview Mode: Active</span>
-          </div>
-          <div class="space-y-3">
-            <div class="h-4 bg-slate-800 rounded w-3/4 animate-pulse"></div>
-            <div class="h-4 bg-slate-800 rounded w-1/2 animate-pulse"></div>
-            <div class="h-24 bg-indigo-950/40 rounded-xl border border-indigo-500/20 p-4 flex items-center justify-center text-center">
-              <p class="text-indigo-300 font-semibold text-sm">⚡ Desain Modern • Respon Cepat • Siap Pakai</p>
-            </div>
-          </div>
+          <a href="#kontak" class="bg-gradient-to-r from-indigo-500 to-purple-600 text-white px-8 py-3.5 rounded-xl font-bold shadow-xl transition">Pesan Sekarang &rarr;</a>
         </div>
       </div>
     </div>
   </main>
-
-  <footer class="border-t border-slate-800/80 bg-slate-950 py-8 text-center text-slate-500 text-xs">
+  <footer class="border-t border-slate-800/80 py-8 text-center text-slate-500 text-xs">
     <p>&copy; ${new Date().getFullYear()} ${businessName}. Powered by Jose Rizal Vibe Coding Studio.</p>
   </footer>
 </body>
 </html>`;
 }
 
+// ══════════════════════════════════════════════════════════════
+//  GEMINI API CALLS
+// ══════════════════════════════════════════════════════════════
 async function generateHtmlWithGemini(prompt, previousHtml, history = []) {
   const apiKey = process.env.GEMINI_API_KEY;
   if (!apiKey || apiKey.trim() === '') {
@@ -205,10 +306,7 @@ async function generateHtmlWithGemini(prompt, previousHtml, history = []) {
     currentPromptText = `Berikut adalah kode HTML website sebelumnya:\n\n${previousHtml}\n\nPermintaan revisi user: ${prompt}`;
   }
 
-  contents.push({
-    role: 'user',
-    parts: [{ text: currentPromptText }]
-  });
+  contents.push({ role: 'user', parts: [{ text: currentPromptText }] });
 
   const apiUrl = `https://generativelanguage.googleapis.com/v1beta/models/${GEMINI_MODEL}:generateContent?key=${apiKey}`;
 
@@ -247,7 +345,7 @@ async function generateSummaryWithGemini(history, currentPrompt) {
 
   if (!apiKey || apiKey.trim() === '') {
     const userPrompts = history.filter(h => h.role === 'user').map(h => h.text).join(', ') || currentPrompt || 'Permintaan Website Custom';
-    return `Customer membutuhkan pembuatan website custom berdasarkan deskripsi: "${userPrompts}". Desain mengusung tampilan modern, profesional, dan responsive dengan tema warna elegan, fitur navigasi lengkap, serta integrasi tombol chat WhatsApp.`;
+    return `Customer membutuhkan pembuatan website custom berdasarkan deskripsi: "${userPrompts}". Desain mengusung tampilan modern, profesional, dan responsive.`;
   }
 
   const apiUrl = `https://generativelanguage.googleapis.com/v1beta/models/${GEMINI_MODEL}:generateContent?key=${apiKey}`;
@@ -263,14 +361,14 @@ async function generateSummaryWithGemini(history, currentPrompt) {
     });
 
     if (!response.ok) {
-      return `Customer membutuhkan pembuatan website custom berbasis deskripsi: "${currentPrompt || 'Web App Custom'}". Fitur mencakup desain responsive, visual modern, dan integrasi WhatsApp.`;
+      return `Customer membutuhkan pembuatan website custom berbasis deskripsi: "${currentPrompt || 'Web App Custom'}".`;
     }
 
     const data = await response.json();
     const summaryText = data?.candidates?.[0]?.content?.parts?.[0]?.text;
-    return summaryText ? summaryText.trim() : `Customer menginginkan pembuatan website modern sesuai spesifikasi yang tertera pada kode referensi sesi.`;
+    return summaryText ? summaryText.trim() : `Customer menginginkan pembuatan website modern sesuai spesifikasi sesi.`;
   } catch (error) {
-    return `Customer telah merancang preview website custom dengan beberapa preferensi fitur & warna. Mohon periksa detail referensi sesi di dashboard admin.`;
+    return `Customer telah merancang preview website custom. Mohon periksa detail referensi sesi di dashboard admin.`;
   }
 }
 
@@ -279,6 +377,7 @@ module.exports = {
   writeDb,
   getSession,
   updateSession,
+  getAllSessions,
   generateHtmlWithGemini,
   generateSummaryWithGemini
 };

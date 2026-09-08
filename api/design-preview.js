@@ -31,7 +31,7 @@ module.exports = async function handler(req, res) {
     }
 
     const cleanPrompt = prompt.trim();
-    const session = getSession(session_id);
+    const session = await getSession(session_id);
 
     const MAX_LIMIT = 5;
     if (session.count >= MAX_LIMIT) {
@@ -52,7 +52,7 @@ module.exports = async function handler(req, res) {
       { role: 'assistant', text: 'Tentu! Berikut adalah hasil rancangan desain website sesuai deskripsi Anda.', timestamp: new Date().toISOString() }
     ];
 
-    updateSession(session_id, {
+    await updateSession(session_id, {
       count: newCount,
       history: updatedHistory,
       current_html: generatedHtml

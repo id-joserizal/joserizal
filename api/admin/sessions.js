@@ -1,5 +1,5 @@
 const crypto = require('crypto');
-const { readDb } = require('../lib/db');
+const { getAllSessions } = require('../lib/db');
 
 function generateExpectedToken(username, password) {
   const secret = process.env.ADMIN_SECRET || 'fallback_secret_change_me';
@@ -45,7 +45,6 @@ module.exports = async function handler(req, res) {
     return res.status(401).json({ error: 'Unauthorized. Silakan login terlebih dahulu.' });
   }
 
-  const db = readDb();
-  const sessionList = Object.values(db).sort((a, b) => new Date(b.updated_at) - new Date(a.updated_at));
+  const sessionList = await getAllSessions();
   return res.status(200).json(sessionList);
 };

@@ -25,10 +25,10 @@ module.exports = async function handler(req, res) {
       return res.status(400).json({ error: 'session_id wajib diisi.' });
     }
 
-    const session = getSession(session_id);
+    const session = await getSession(session_id);
     const summaryText = await generateSummaryWithGemini(session.history, prompt || '');
 
-    updateSession(session_id, { summary: summaryText });
+    await updateSession(session_id, { summary: summaryText });
 
     const salesPhone = '6285163612553';
     const waMessageText = `Halo, saya tertarik untuk memesan jasa pembuatan web/app.
