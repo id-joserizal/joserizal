@@ -388,7 +388,7 @@ const DEFAULT_PRODUCTS = [
     ],
     price: 'CUSTOM',
     btn_type: 'vibe_preview',
-    btn_text: '⚡ COBA DESAIN DULU',
+    btn_text: 'COBA DESAIN DULU',
     btn_link: '',
     active: true,
     order: 1

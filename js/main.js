@@ -1034,7 +1034,8 @@ export default function ${appNameVal.replace(/[^a-zA-Z0-9]/g, '') || 'CustomApp'
       produkContainer.innerHTML = products.map(p => {
         let btnHtml = '';
         if (p.btn_type === 'vibe_preview') {
-          btnHtml = `<button type="button" class="btn-dark-card btn-open-vibe-preview" style="background: linear-gradient(135deg, #6366F1, #8B5CF6); border: none; color: #fff;">${p.btn_text || '⚡ COBA DESAIN DULU'}</button>`;
+          const cleanText = (p.btn_text || 'COBA DESAIN DULU').replace(/^⚡\s*/, '');
+          btnHtml = `<button type="button" class="btn-dark-card btn-open-vibe-preview" style="background: linear-gradient(135deg, #D4AF37, #F59E0B); border: none; color: #0E0E0E; font-weight: 700;">${cleanText}</button>`;
         } else if (p.btn_type === 'web_builder') {
           btnHtml = `<button type="button" class="btn-dark-card btn-open-web-builder">${p.btn_text || 'PESAN DESAIN'}</button>`;
         } else {
