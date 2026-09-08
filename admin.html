@@ -3,233 +3,903 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Admin Dashboard — Vibe Coding Preview Sessions</title>
+  <title>Admin Dashboard — Vibe Coding Preview</title>
+  <meta name="robots" content="noindex, nofollow">
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
-  <script src="https://cdn.tailwindcss.com"></script>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=JetBrains+Mono:wght@400;600&display=swap" rel="stylesheet">
   <style>
-    body { font-family: 'Inter', sans-serif; }
-    .custom-scrollbar::-webkit-scrollbar { width: 6px; }
-    .custom-scrollbar::-webkit-scrollbar-track { background: #0f172a; }
-    .custom-scrollbar::-webkit-scrollbar-thumb { background: #334155; border-radius: 999px; }
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+    :root {
+      --bg-950: #020617;
+      --bg-900: #0f172a;
+      --bg-800: #1e293b;
+      --bg-700: #334155;
+      --slate-400: #94a3b8;
+      --slate-300: #cbd5e1;
+      --indigo-600: #4f46e5;
+      --indigo-500: #6366f1;
+      --indigo-400: #818cf8;
+      --indigo-300: #a5b4fc;
+      --emerald-500: #10b981;
+      --red-400: #f87171;
+      --text-white: #f1f5f9;
+    }
+
+    body {
+      font-family: 'Inter', sans-serif;
+      background: var(--bg-950);
+      color: var(--text-white);
+      min-height: 100vh;
+    }
+
+    /* ── SCROLLBAR ── */
+    ::-webkit-scrollbar { width: 5px; height: 5px; }
+    ::-webkit-scrollbar-track { background: var(--bg-900); }
+    ::-webkit-scrollbar-thumb { background: var(--bg-700); border-radius: 99px; }
+    ::-webkit-scrollbar-thumb:hover { background: var(--indigo-600); }
+
+    /* ══════════════════════════════════
+       LOGIN SCREEN
+    ══════════════════════════════════ */
+    #loginScreen {
+      position: fixed; inset: 0; z-index: 9999;
+      display: flex; align-items: center; justify-content: center;
+      background: radial-gradient(ellipse at 60% 0%, rgba(79,70,229,0.18) 0%, transparent 60%),
+                  radial-gradient(ellipse at 0% 80%, rgba(16,185,129,0.10) 0%, transparent 50%),
+                  var(--bg-950);
+    }
+
+    #loginScreen.hidden { display: none; }
+
+    .login-card {
+      width: 100%; max-width: 420px; margin: 1rem;
+      background: var(--bg-900);
+      border: 1px solid var(--bg-700);
+      border-radius: 20px;
+      padding: 2.5rem;
+      box-shadow: 0 25px 60px rgba(0,0,0,0.5), 0 0 0 1px rgba(99,102,241,0.08);
+      animation: slideUp 0.4s cubic-bezier(0.16, 1, 0.3, 1);
+    }
+
+    @keyframes slideUp {
+      from { opacity: 0; transform: translateY(24px); }
+      to   { opacity: 1; transform: translateY(0); }
+    }
+
+    .login-logo {
+      width: 52px; height: 52px; border-radius: 14px;
+      background: linear-gradient(135deg, var(--indigo-600), #7c3aed);
+      display: flex; align-items: center; justify-content: center;
+      font-size: 24px; margin: 0 auto 1.5rem;
+      box-shadow: 0 8px 24px rgba(79,70,229,0.35);
+    }
+
+    .login-title {
+      text-align: center; font-size: 1.375rem; font-weight: 800;
+      color: var(--text-white); margin-bottom: 0.25rem;
+    }
+
+    .login-subtitle {
+      text-align: center; font-size: 0.8125rem;
+      color: var(--slate-400); margin-bottom: 2rem;
+    }
+
+    .form-group { margin-bottom: 1rem; }
+
+    .form-label {
+      display: block; font-size: 0.75rem; font-weight: 600;
+      color: var(--slate-400); margin-bottom: 0.5rem;
+      text-transform: uppercase; letter-spacing: 0.05em;
+    }
+
+    .form-input {
+      width: 100%; background: var(--bg-800);
+      border: 1px solid var(--bg-700); border-radius: 10px;
+      padding: 0.75rem 1rem; color: var(--text-white);
+      font-size: 0.9375rem; font-family: inherit;
+      transition: border-color 0.2s, box-shadow 0.2s;
+      outline: none;
+    }
+
+    .form-input:focus {
+      border-color: var(--indigo-500);
+      box-shadow: 0 0 0 3px rgba(99,102,241,0.15);
+    }
+
+    .form-input::placeholder { color: var(--bg-700); }
+
+    .btn-login {
+      width: 100%; margin-top: 1.5rem;
+      background: linear-gradient(135deg, var(--indigo-600), #7c3aed);
+      color: #fff; font-weight: 700; font-size: 0.9375rem;
+      border: none; border-radius: 10px; padding: 0.875rem;
+      cursor: pointer; transition: opacity 0.2s, transform 0.1s;
+      display: flex; align-items: center; justify-content: center; gap: 0.5rem;
+    }
+
+    .btn-login:hover { opacity: 0.9; }
+    .btn-login:active { transform: scale(0.98); }
+    .btn-login:disabled { opacity: 0.6; cursor: not-allowed; }
+
+    .login-error {
+      background: rgba(248,113,113,0.1); border: 1px solid rgba(248,113,113,0.3);
+      color: var(--red-400); font-size: 0.8125rem; font-weight: 500;
+      padding: 0.75rem 1rem; border-radius: 8px; margin-top: 1rem;
+      display: none; text-align: center;
+    }
+
+    .login-error.visible { display: block; animation: shake 0.4s; }
+
+    @keyframes shake {
+      0%,100% { transform: translateX(0); }
+      25% { transform: translateX(-6px); }
+      75% { transform: translateX(6px); }
+    }
+
+    /* ══════════════════════════════════
+       MAIN APP
+    ══════════════════════════════════ */
+    #adminApp { display: none; flex-direction: column; min-height: 100vh; }
+    #adminApp.visible { display: flex; }
+
+    /* Header */
+    .admin-header {
+      background: rgba(15,23,42,0.85); backdrop-filter: blur(16px);
+      border-bottom: 1px solid var(--bg-800);
+      position: sticky; top: 0; z-index: 100;
+    }
+
+    .admin-header-inner {
+      max-width: 1400px; margin: 0 auto;
+      padding: 0.875rem 1.5rem;
+      display: flex; align-items: center; justify-content: space-between; gap: 1rem;
+    }
+
+    .admin-brand { display: flex; align-items: center; gap: 0.75rem; }
+    .admin-brand-icon {
+      width: 36px; height: 36px; border-radius: 10px;
+      background: linear-gradient(135deg, var(--indigo-600), #7c3aed);
+      display: flex; align-items: center; justify-content: center;
+      font-size: 16px; flex-shrink: 0;
+    }
+
+    .admin-brand-text h1 { font-size: 1rem; font-weight: 800; color: var(--text-white); }
+    .admin-brand-text p { font-size: 0.7rem; color: var(--slate-400); }
+
+    .admin-header-actions { display: flex; align-items: center; gap: 0.625rem; }
+
+    .btn-sm {
+      font-size: 0.75rem; font-weight: 600; padding: 0.5rem 0.875rem;
+      border-radius: 8px; cursor: pointer; border: 1px solid;
+      transition: all 0.15s; text-decoration: none;
+      display: inline-flex; align-items: center; gap: 0.375rem;
+    }
+
+    .btn-sm-ghost {
+      background: transparent; border-color: var(--bg-700);
+      color: var(--slate-300);
+    }
+    .btn-sm-ghost:hover { background: var(--bg-800); color: var(--text-white); }
+
+    .btn-sm-primary {
+      background: var(--indigo-600); border-color: var(--indigo-600);
+      color: #fff;
+    }
+    .btn-sm-primary:hover { background: var(--indigo-500); border-color: var(--indigo-500); }
+
+    .btn-sm-danger {
+      background: transparent; border-color: rgba(248,113,113,0.3);
+      color: var(--red-400);
+    }
+    .btn-sm-danger:hover { background: rgba(248,113,113,0.1); }
+
+    /* Main layout */
+    .admin-main {
+      max-width: 1400px; width: 100%; margin: 0 auto;
+      padding: 1.5rem;
+      display: grid; grid-template-columns: 340px 1fr;
+      gap: 1.5rem; flex: 1;
+    }
+
+    @media (max-width: 900px) {
+      .admin-main { grid-template-columns: 1fr; }
+    }
+
+    /* Left Panel */
+    .left-panel { display: flex; flex-direction: column; gap: 0.875rem; }
+
+    .panel-heading {
+      font-size: 0.6875rem; font-weight: 700; text-transform: uppercase;
+      letter-spacing: 0.08em; color: var(--slate-400);
+      display: flex; align-items: center; justify-content: space-between;
+    }
+
+    .panel-count {
+      background: var(--indigo-600); color: #fff;
+      font-size: 0.625rem; font-weight: 700;
+      padding: 0.15rem 0.5rem; border-radius: 99px;
+    }
+
+    /* Search Box */
+    .search-wrapper { position: relative; }
+
+    .search-icon {
+      position: absolute; left: 0.875rem; top: 50%; transform: translateY(-50%);
+      color: var(--slate-400); font-size: 0.875rem; pointer-events: none;
+    }
+
+    .search-input {
+      width: 100%;
+      background: var(--bg-900); border: 1px solid var(--bg-700);
+      border-radius: 10px; padding: 0.625rem 2.5rem 0.625rem 2.5rem;
+      color: var(--text-white); font-size: 0.8125rem; font-family: 'JetBrains Mono', monospace;
+      outline: none; transition: border-color 0.2s, box-shadow 0.2s;
+    }
+
+    .search-input:focus {
+      border-color: var(--indigo-500);
+      box-shadow: 0 0 0 3px rgba(99,102,241,0.15);
+    }
+
+    .search-input::placeholder { font-family: 'Inter', sans-serif; color: var(--bg-700); }
+
+    .search-clear {
+      position: absolute; right: 0.75rem; top: 50%; transform: translateY(-50%);
+      background: var(--bg-700); border: none; border-radius: 4px;
+      color: var(--slate-400); font-size: 0.6875rem; padding: 0.1rem 0.4rem;
+      cursor: pointer; display: none;
+    }
+    .search-clear.visible { display: block; }
+
+    /* Session List */
+    .session-list {
+      display: flex; flex-direction: column; gap: 0.5rem;
+      max-height: calc(100vh - 240px); overflow-y: auto;
+    }
+
+    .session-card {
+      background: var(--bg-900); border: 1px solid var(--bg-800);
+      border-radius: 12px; padding: 0.875rem;
+      cursor: pointer; transition: all 0.15s;
+    }
+
+    .session-card:hover { border-color: var(--bg-700); background: var(--bg-800); }
+
+    .session-card.active {
+      border-color: var(--indigo-500);
+      background: rgba(79,70,229,0.08);
+      box-shadow: 0 0 0 1px rgba(99,102,241,0.2);
+    }
+
+    .session-id {
+      font-family: 'JetBrains Mono', monospace;
+      font-size: 0.6875rem; font-weight: 600;
+      color: var(--indigo-400);
+      white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+    }
+
+    .session-date { font-size: 0.6875rem; color: var(--slate-400); flex-shrink: 0; }
+
+    .session-preview {
+      font-size: 0.75rem; color: var(--slate-300); font-weight: 500;
+      margin: 0.375rem 0 0.5rem;
+      display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical;
+      overflow: hidden;
+    }
+
+    .session-meta {
+      display: flex; align-items: center; justify-content: space-between;
+      padding-top: 0.5rem; border-top: 1px solid rgba(30,41,59,0.8);
+    }
+
+    .session-meta-count { font-size: 0.6875rem; color: var(--slate-400); }
+    .session-meta-count strong { color: var(--indigo-300); }
+
+    .badge-ready {
+      font-size: 0.6rem; font-weight: 700; text-transform: uppercase;
+      padding: 0.15rem 0.5rem; border-radius: 99px;
+      background: rgba(16,185,129,0.12); color: var(--emerald-500);
+      border: 1px solid rgba(16,185,129,0.25);
+    }
+
+    .badge-empty {
+      font-size: 0.6rem; font-weight: 700; text-transform: uppercase;
+      padding: 0.15rem 0.5rem; border-radius: 99px;
+      background: rgba(148,163,184,0.08); color: var(--slate-400);
+      border: 1px solid rgba(148,163,184,0.15);
+    }
+
+    .empty-state {
+      text-align: center; padding: 2.5rem 1.5rem;
+      background: var(--bg-900); border: 1px solid var(--bg-800);
+      border-radius: 12px; color: var(--slate-400); font-size: 0.8125rem;
+    }
+
+    .empty-state .empty-icon { font-size: 2rem; margin-bottom: 0.75rem; }
+
+    /* ── RIGHT PANEL ── */
+    .right-panel { display: flex; flex-direction: column; gap: 1rem; min-height: 0; }
+
+    .detail-placeholder {
+      flex: 1; display: flex; flex-direction: column;
+      align-items: center; justify-content: center;
+      background: var(--bg-900); border: 1px solid var(--bg-800);
+      border-radius: 16px; padding: 3rem; text-align: center;
+    }
+
+    .detail-placeholder-icon {
+      width: 64px; height: 64px; border-radius: 16px;
+      background: var(--bg-800); display: flex; align-items: center;
+      justify-content: center; font-size: 28px; margin-bottom: 1.25rem;
+    }
+
+    .detail-placeholder h3 { font-size: 1.125rem; font-weight: 700; margin-bottom: 0.5rem; }
+    .detail-placeholder p { font-size: 0.8125rem; color: var(--slate-400); max-width: 320px; }
+
+    /* Detail container */
+    .detail-container { display: none; flex-direction: column; gap: 1rem; }
+    .detail-container.visible { display: flex; }
+
+    /* Overview card */
+    .overview-card {
+      background: var(--bg-900); border: 1px solid var(--bg-800);
+      border-radius: 16px; padding: 1.25rem 1.5rem;
+    }
+
+    .overview-top {
+      display: flex; align-items: flex-start; justify-content: space-between;
+      gap: 1rem; padding-bottom: 1rem;
+      border-bottom: 1px solid var(--bg-800); margin-bottom: 1rem;
+    }
+
+    .detail-session-id {
+      font-family: 'JetBrains Mono', monospace; font-size: 0.75rem;
+      font-weight: 600; color: var(--indigo-300);
+      background: rgba(99,102,241,0.1); border: 1px solid rgba(99,102,241,0.2);
+      padding: 0.25rem 0.625rem; border-radius: 6px; display: inline-block;
+      margin-bottom: 0.375rem;
+    }
+
+    .detail-title {
+      font-size: 1.125rem; font-weight: 700; color: var(--text-white);
+    }
+
+    .detail-timestamp { font-size: 0.75rem; color: var(--slate-400); margin-top: 0.25rem; }
+
+    .btn-wa {
+      background: #16a34a; color: #fff; font-weight: 600; font-size: 0.75rem;
+      padding: 0.625rem 1rem; border-radius: 8px; border: none;
+      text-decoration: none; display: inline-flex; align-items: center; gap: 0.375rem;
+      transition: background 0.15s; white-space: nowrap; flex-shrink: 0;
+    }
+    .btn-wa:hover { background: #15803d; }
+
+    /* Summary box */
+    .section-label {
+      font-size: 0.6875rem; font-weight: 700; text-transform: uppercase;
+      letter-spacing: 0.07em; color: var(--slate-400); margin-bottom: 0.5rem;
+    }
+
+    .summary-box {
+      background: var(--bg-950); border: 1px solid var(--bg-700);
+      border-radius: 10px; padding: 1rem;
+      font-size: 0.8375rem; color: var(--slate-300); line-height: 1.65;
+    }
+
+    /* Chat history */
+    .chat-toggle {
+      background: rgba(30,41,59,0.5); border: 1px solid var(--bg-800);
+      border-radius: 10px; overflow: hidden;
+    }
+
+    .chat-toggle summary {
+      padding: 0.75rem 1rem; cursor: pointer; list-style: none;
+      font-size: 0.75rem; font-weight: 700; text-transform: uppercase;
+      letter-spacing: 0.05em; color: var(--slate-300);
+      display: flex; align-items: center; justify-content: space-between;
+      user-select: none;
+    }
+
+    .chat-toggle summary:hover { background: rgba(30,41,59,0.7); }
+
+    .chat-toggle-arrow { transition: transform 0.2s; }
+    details[open] .chat-toggle-arrow { transform: rotate(180deg); }
+
+    .chat-history-inner {
+      border-top: 1px solid var(--bg-800);
+      padding: 0.75rem; display: flex; flex-direction: column; gap: 0.5rem;
+      max-height: 220px; overflow-y: auto;
+    }
+
+    .chat-bubble {
+      padding: 0.625rem 0.75rem; border-radius: 8px;
+      font-size: 0.75rem; line-height: 1.55;
+    }
+
+    .chat-bubble.user {
+      background: rgba(79,70,229,0.12); border: 1px solid rgba(79,70,229,0.2);
+      color: #c7d2fe;
+    }
+
+    .chat-bubble.assistant {
+      background: var(--bg-900); border: 1px solid var(--bg-700);
+      color: var(--slate-300);
+    }
+
+    .chat-bubble-role {
+      font-size: 0.625rem; font-weight: 700; text-transform: uppercase;
+      letter-spacing: 0.06em; color: var(--slate-400); display: block; margin-bottom: 0.25rem;
+    }
+
+    /* Preview iframe */
+    .preview-card {
+      background: var(--bg-900); border: 1px solid var(--bg-800);
+      border-radius: 16px; overflow: hidden;
+      display: flex; flex-direction: column; flex: 1; min-height: 520px;
+    }
+
+    .preview-toolbar {
+      background: var(--bg-800); padding: 0.625rem 1rem;
+      border-bottom: 1px solid var(--bg-700);
+      display: flex; align-items: center; justify-content: space-between;
+    }
+
+    .preview-dots { display: flex; align-items: center; gap: 6px; }
+    .dot { width: 11px; height: 11px; border-radius: 50%; }
+    .dot-red { background: #ef4444; }
+    .dot-yellow { background: #eab308; }
+    .dot-green { background: #22c55e; }
+
+    .preview-label {
+      font-size: 0.6875rem; font-family: 'JetBrains Mono', monospace;
+      color: var(--slate-400); margin-left: 0.75rem;
+    }
+
+    .btn-fullscreen {
+      font-size: 0.6875rem; font-weight: 600; color: var(--indigo-400);
+      background: none; border: none; cursor: pointer; transition: color 0.15s;
+    }
+    .btn-fullscreen:hover { color: var(--indigo-300); }
+
+    .preview-iframe {
+      flex: 1; border: none; background: #fff; width: 100%;
+    }
+
+    /* Spinner */
+    .spinner {
+      display: inline-block; width: 14px; height: 14px;
+      border: 2px solid rgba(255,255,255,0.25); border-top-color: #fff;
+      border-radius: 50%; animation: spin 0.6s linear infinite;
+    }
+
+    @keyframes spin { to { transform: rotate(360deg); } }
   </style>
 </head>
-<body class="bg-slate-950 text-slate-100 min-h-screen flex flex-col">
+<body>
 
-  <!-- Admin Header -->
-  <header class="bg-slate-900/80 backdrop-blur-md border-b border-slate-800 sticky top-0 z-50">
-    <div class="max-w-7xl mx-auto px-6 py-4 flex items-center justify-between">
-      <div class="flex items-center gap-3">
-        <div class="w-9 h-9 rounded-lg bg-indigo-600 flex items-center justify-center font-bold text-lg text-white shadow-md shadow-indigo-500/30">
-          ⚡
+  <!-- ══ LOGIN SCREEN ══ -->
+  <div id="loginScreen">
+    <div class="login-card">
+      <div class="login-logo">⚡</div>
+      <h1 class="login-title">Admin Dashboard</h1>
+      <p class="login-subtitle">Jose Rizal — Vibe Coding Preview</p>
+
+      <form id="loginForm" autocomplete="off">
+        <div class="form-group">
+          <label class="form-label" for="inputUsername">Username</label>
+          <input type="text" id="inputUsername" class="form-input" placeholder="Masukkan username" autocomplete="username" required>
         </div>
-        <div>
-          <h1 class="font-bold text-lg text-white leading-none">JOSE RIZAL — ADMIN DASHBOARD</h1>
-          <p class="text-xs text-slate-400 mt-0.5">Daftar Sesi &amp; Referensi Desain Vibe Coding Preview</p>
+        <div class="form-group">
+          <label class="form-label" for="inputPassword">Password</label>
+          <input type="password" id="inputPassword" class="form-input" placeholder="Masukkan password" autocomplete="current-password" required>
         </div>
-      </div>
-      <div class="flex items-center gap-3">
-        <a href="/" class="text-xs font-semibold text-slate-300 hover:text-white bg-slate-800 hover:bg-slate-700 px-4 py-2 rounded-lg transition border border-slate-700">
-          &larr; Ke Website Katalog
-        </a>
-        <button id="btnRefresh" class="text-xs font-semibold text-white bg-indigo-600 hover:bg-indigo-500 px-4 py-2 rounded-lg transition shadow-md shadow-indigo-600/20">
-          🔄 Refresh Data
+        <button type="submit" id="btnLoginSubmit" class="btn-login">
+          <span id="loginBtnText">🔐 Masuk ke Dashboard</span>
+          <span id="loginSpinner" style="display:none;" class="spinner"></span>
         </button>
-      </div>
+        <div id="loginError" class="login-error"></div>
+      </form>
     </div>
-  </header>
+  </div>
 
-  <!-- Admin Main Layout -->
-  <main class="max-w-7xl mx-auto px-6 py-8 flex-grow w-full grid grid-cols-1 lg:grid-cols-12 gap-8">
-    
-    <!-- Left Column: Session List (4 cols) -->
-    <div class="lg:col-span-4 space-y-4">
-      <div class="flex items-center justify-between">
-        <h2 class="text-sm font-bold text-slate-300 uppercase tracking-wider">Daftar Sesi Customer (<span id="sessionCount">0</span>)</h2>
-        <span class="text-xs text-indigo-400 font-mono" id="lastUpdated">Updated just now</span>
-      </div>
+  <!-- ══ MAIN ADMIN APP ══ -->
+  <div id="adminApp">
 
-      <div id="sessionList" class="space-y-3 max-h-[calc(100vh-180px)] overflow-y-auto custom-scrollbar pr-1">
-        <!-- Rendered dynamically -->
-        <div class="p-8 text-center bg-slate-900/50 rounded-xl border border-slate-800 text-slate-500 text-sm">
-          Loading data sesi...
+    <!-- Header -->
+    <header class="admin-header">
+      <div class="admin-header-inner">
+        <div class="admin-brand">
+          <div class="admin-brand-icon">⚡</div>
+          <div class="admin-brand-text">
+            <h1>JOSE RIZAL — ADMIN</h1>
+            <p>Vibe Coding Preview Sessions Dashboard</p>
+          </div>
+        </div>
+        <div class="admin-header-actions">
+          <span id="headerUsername" style="font-size:0.75rem; color:var(--slate-400);"></span>
+          <a href="/" class="btn-sm btn-sm-ghost">← Ke Website</a>
+          <button id="btnRefresh" class="btn-sm btn-sm-primary">🔄 Refresh</button>
+          <button id="btnLogout" class="btn-sm btn-sm-danger">Logout</button>
         </div>
       </div>
-    </div>
+    </header>
 
-    <!-- Right Column: Detail Session Preview (8 cols) -->
-    <div class="lg:col-span-8 flex flex-col space-y-4">
-      <div id="detailPlaceholder" class="p-12 text-center bg-slate-900/40 rounded-2xl border border-slate-800/80 flex flex-col items-center justify-center min-h-[500px]">
-        <div class="w-16 h-16 rounded-2xl bg-slate-800 flex items-center justify-center text-3xl mb-4 text-slate-400">
-          📋
+    <!-- Main Layout -->
+    <main class="admin-main">
+
+      <!-- LEFT: Session List -->
+      <aside class="left-panel">
+        <div class="panel-heading">
+          <span>Sesi Customer &nbsp;<span class="panel-count" id="sessionCount">0</span></span>
+          <span id="lastUpdated" style="font-size:0.6rem; font-weight:500; font-family:'JetBrains Mono',monospace;"></span>
         </div>
-        <h3 class="text-lg font-bold text-slate-200 mb-1">Pilih Sesi Customer</h3>
-        <p class="text-slate-400 text-sm max-w-sm">Klik salah satu sesi di panel kiri untuk melihat ringkasan kebutuhan, riwayat chat, dan render HTML preview lengkap.</p>
-      </div>
 
-      <div id="detailContainer" class="hidden flex-col space-y-6">
-        <!-- Session Overview Card -->
-        <div class="bg-slate-900 p-6 rounded-2xl border border-slate-800 space-y-4">
-          <div class="flex flex-wrap items-center justify-between gap-4 border-b border-slate-800 pb-4">
-            <div>
-              <div class="flex items-center gap-2">
-                <span class="text-xs font-bold font-mono px-2.5 py-1 rounded bg-indigo-500/20 text-indigo-300 border border-indigo-500/30" id="detailSessionId">sess_123</span>
-                <span class="text-xs text-slate-400" id="detailTimestamp">2026-09-08</span>
+        <!-- Search -->
+        <div class="search-wrapper">
+          <span class="search-icon">🔍</span>
+          <input
+            type="text"
+            id="searchInput"
+            class="search-input"
+            placeholder="Cari Session ID atau kata kunci..."
+          >
+          <button id="searchClear" class="search-clear" title="Hapus pencarian">✕</button>
+        </div>
+
+        <!-- Session list -->
+        <div class="session-list" id="sessionList">
+          <div class="empty-state">
+            <div class="empty-icon">⏳</div>
+            <p>Memuat data sesi...</p>
+          </div>
+        </div>
+      </aside>
+
+      <!-- RIGHT: Detail -->
+      <section class="right-panel">
+
+        <!-- Placeholder -->
+        <div class="detail-placeholder" id="detailPlaceholder">
+          <div class="detail-placeholder-icon">📋</div>
+          <h3>Pilih Sesi Customer</h3>
+          <p>Klik salah satu sesi di panel kiri untuk melihat ringkasan kebutuhan, riwayat chat, dan render preview HTML lengkap.</p>
+        </div>
+
+        <!-- Detail container -->
+        <div class="detail-container" id="detailContainer">
+
+          <!-- Overview card -->
+          <div class="overview-card">
+            <div class="overview-top">
+              <div>
+                <div class="detail-session-id" id="detailSessionId">sess_xxx</div>
+                <div class="detail-title" id="detailTitle">—</div>
+                <div class="detail-timestamp" id="detailTimestamp">—</div>
               </div>
-              <h3 class="text-xl font-bold text-white mt-2" id="detailTitle">Preview Desain Customer</h3>
+              <a class="btn-wa" id="btnContactWa" href="#" target="_blank">💬 Hubungi WA</a>
             </div>
 
-            <div class="flex items-center gap-2">
-              <a id="btnContactWa" href="#" target="_blank" class="bg-emerald-600 hover:bg-emerald-500 text-white font-semibold text-xs px-4 py-2.5 rounded-lg flex items-center gap-2 shadow-lg shadow-emerald-600/20 transition">
-                <span>💬</span> Hubungi via WA
-              </a>
-            </div>
+            <p class="section-label">Ringkasan Kebutuhan (AI-Generated)</p>
+            <div class="summary-box" id="detailSummary">—</div>
+
+            <!-- Chat history collapsible -->
+            <details class="chat-toggle" style="margin-top:1rem;">
+              <summary>
+                <span>💬 Riwayat Chat AI (<span id="chatCount">0</span> pesan)</span>
+                <span class="chat-toggle-arrow">▾</span>
+              </summary>
+              <div class="chat-history-inner" id="detailHistory"></div>
+            </details>
           </div>
 
-          <!-- Summary Box -->
-          <div class="space-y-2">
-            <h4 class="text-xs font-bold uppercase tracking-wider text-slate-400">Ringkasan Kebutuhan Desain (Gemini Generated):</h4>
-            <div id="detailSummary" class="bg-slate-950 p-4 rounded-xl border border-slate-800 text-slate-300 text-sm leading-relaxed font-medium">
-              -
+          <!-- Preview iframe -->
+          <div class="preview-card">
+            <div class="preview-toolbar">
+              <div style="display:flex; align-items:center;">
+                <div class="preview-dots">
+                  <div class="dot dot-red"></div>
+                  <div class="dot dot-yellow"></div>
+                  <div class="dot dot-green"></div>
+                </div>
+                <span class="preview-label">Sandbox Preview Canvas</span>
+              </div>
+              <button class="btn-fullscreen" id="btnOpenNewTab">↗ Buka Fullscreen</button>
             </div>
+            <iframe id="previewIframe" class="preview-iframe" sandbox="allow-scripts allow-same-origin"></iframe>
           </div>
 
-          <!-- Chat History Collapsible -->
-          <details class="group bg-slate-950/60 rounded-xl border border-slate-800/80 overflow-hidden">
-            <summary class="p-4 text-xs font-bold text-slate-300 uppercase tracking-wider cursor-pointer flex items-center justify-between select-none hover:bg-slate-900/40">
-              <span>💬 Riwayat Percakapan Chat AI (<span id="chatCount">0</span> pesan)</span>
-              <span class="transition-transform group-open:rotate-180">&darr;</span>
-            </summary>
-            <div id="detailHistory" class="p-4 border-t border-slate-800 space-y-3 max-h-60 overflow-y-auto custom-scrollbar text-xs">
-              <!-- Chat history lines -->
-            </div>
-          </details>
         </div>
+      </section>
 
-        <!-- Rendered Iframe Preview Card -->
-        <div class="bg-slate-900 rounded-2xl border border-slate-800 overflow-hidden flex flex-col flex-grow min-h-[600px]">
-          <div class="bg-slate-800/80 px-4 py-3 border-b border-slate-700 flex items-center justify-between">
-            <div class="flex items-center gap-2">
-              <span class="w-3 h-3 rounded-full bg-red-500/80"></span>
-              <span class="w-3 h-3 rounded-full bg-yellow-500/80"></span>
-              <span class="w-3 h-3 rounded-full bg-green-500/80"></span>
-              <span class="text-xs font-mono text-slate-300 ml-2">Sandbox Render Preview Canvas</span>
-            </div>
-            <button id="btnOpenNewTab" class="text-xs font-semibold text-indigo-400 hover:text-indigo-300 transition">
-              ↗️ Buka Fullscreen
-            </button>
-          </div>
-
-          <iframe id="previewIframe" class="w-full flex-grow border-0 bg-white" sandbox="allow-scripts allow-same-origin"></iframe>
-        </div>
-      </div>
-
-    </div>
-  </main>
+    </main>
+  </div>
 
   <script>
+    // ══════════════════════════════════════════
+    // AUTH STATE
+    // ══════════════════════════════════════════
+    const TOKEN_KEY = 'ratakiri_admin_token';
+    const USERNAME_KEY = 'ratakiri_admin_user';
+
+    let authToken = sessionStorage.getItem(TOKEN_KEY) || '';
+    let authUsername = sessionStorage.getItem(USERNAME_KEY) || '';
     let allSessions = [];
     let activeSessionId = null;
 
+    // ── Show/Hide screens ──
+    function showLoginScreen() {
+      document.getElementById('loginScreen').classList.remove('hidden');
+      document.getElementById('adminApp').classList.remove('visible');
+    }
+
+    function showAdminApp() {
+      document.getElementById('loginScreen').classList.add('hidden');
+      document.getElementById('adminApp').classList.add('visible');
+      document.getElementById('headerUsername').textContent = `👤 ${authUsername}`;
+      fetchSessions();
+    }
+
+    // ── Check existing session ──
+    if (authToken) {
+      showAdminApp();
+    } else {
+      showLoginScreen();
+    }
+
+    // ══════════════════════════════════════════
+    // LOGIN FORM
+    // ══════════════════════════════════════════
+    document.getElementById('loginForm').addEventListener('submit', async (e) => {
+      e.preventDefault();
+      const username = document.getElementById('inputUsername').value.trim();
+      const password = document.getElementById('inputPassword').value;
+
+      const btnText = document.getElementById('loginBtnText');
+      const spinner = document.getElementById('loginSpinner');
+      const errBox = document.getElementById('loginError');
+
+      // Loading state
+      btnText.style.display = 'none';
+      spinner.style.display = 'inline-block';
+      document.getElementById('btnLoginSubmit').disabled = true;
+      errBox.classList.remove('visible');
+
+      try {
+        const res = await fetch('/api/admin/login', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ username, password })
+        });
+
+        const data = await res.json();
+
+        if (res.ok && data.token) {
+          authToken = data.token;
+          authUsername = data.username || username;
+          sessionStorage.setItem(TOKEN_KEY, authToken);
+          sessionStorage.setItem(USERNAME_KEY, authUsername);
+          showAdminApp();
+        } else {
+          errBox.textContent = data.error || 'Login gagal. Coba lagi.';
+          errBox.classList.add('visible');
+        }
+      } catch (err) {
+        errBox.textContent = 'Koneksi gagal. Pastikan server berjalan.';
+        errBox.classList.add('visible');
+      } finally {
+        btnText.style.display = 'inline';
+        spinner.style.display = 'none';
+        document.getElementById('btnLoginSubmit').disabled = false;
+      }
+    });
+
+    // ── Logout ──
+    document.getElementById('btnLogout').addEventListener('click', () => {
+      sessionStorage.removeItem(TOKEN_KEY);
+      sessionStorage.removeItem(USERNAME_KEY);
+      authToken = '';
+      authUsername = '';
+      document.getElementById('inputUsername').value = '';
+      document.getElementById('inputPassword').value = '';
+      showLoginScreen();
+    });
+
+    // ══════════════════════════════════════════
+    // FETCH SESSIONS
+    // ══════════════════════════════════════════
     async function fetchSessions() {
       try {
-        const res = await fetch('/api/admin/sessions');
+        const res = await fetch('/api/admin/sessions', {
+          headers: { 'Authorization': `Bearer ${authToken}` }
+        });
+
+        if (res.status === 401) {
+          // Token invalid → force logout
+          sessionStorage.removeItem(TOKEN_KEY);
+          sessionStorage.removeItem(USERNAME_KEY);
+          showLoginScreen();
+          return;
+        }
+
         if (!res.ok) throw new Error('Gagal mengambil data sesi');
+
         allSessions = await res.json();
-        renderSessionList();
-        document.getElementById('lastUpdated').textContent = 'Updated at ' + new Date().toLocaleTimeString();
+        applySearch(); // render with current search filter
+        document.getElementById('lastUpdated').textContent =
+          'Updated ' + new Date().toLocaleTimeString('id-ID', { hour: '2-digit', minute: '2-digit' });
+
       } catch (err) {
         console.error(err);
-        document.getElementById('sessionList').innerHTML = `<div class="p-4 bg-red-950/40 border border-red-800 text-red-300 text-xs rounded-xl text-center">Gagal memuat data sesi server.</div>`;
+        document.getElementById('sessionList').innerHTML = `
+          <div class="empty-state" style="border-color:rgba(248,113,113,0.2); color:#f87171;">
+            <div class="empty-icon">⚠️</div>
+            <p>Gagal memuat data dari server.</p>
+          </div>`;
       }
     }
 
-    function renderSessionList() {
-      const container = document.getElementById('sessionList');
-      document.getElementById('sessionCount').textContent = allSessions.length;
+    // ══════════════════════════════════════════
+    // SEARCH
+    // ══════════════════════════════════════════
+    const searchInput = document.getElementById('searchInput');
+    const searchClear = document.getElementById('searchClear');
 
-      if (allSessions.length === 0) {
-        container.innerHTML = `<div class="p-8 text-center bg-slate-900/50 rounded-xl border border-slate-800 text-slate-400 text-xs">Belum ada sesi desain customer.</div>`;
+    searchInput.addEventListener('input', () => {
+      searchClear.classList.toggle('visible', searchInput.value.length > 0);
+      applySearch();
+    });
+
+    searchClear.addEventListener('click', () => {
+      searchInput.value = '';
+      searchClear.classList.remove('visible');
+      applySearch();
+      searchInput.focus();
+    });
+
+    function applySearch() {
+      const query = searchInput.value.trim().toLowerCase();
+      const filtered = query
+        ? allSessions.filter(s =>
+            s.session_id.toLowerCase().includes(query) ||
+            (s.summary || '').toLowerCase().includes(query) ||
+            (s.history || []).some(h => (h.text || '').toLowerCase().includes(query))
+          )
+        : allSessions;
+
+      renderSessionList(filtered);
+    }
+
+    // ══════════════════════════════════════════
+    // RENDER SESSION LIST
+    // ══════════════════════════════════════════
+    function renderSessionList(sessions) {
+      const container = document.getElementById('sessionList');
+      const countEl = document.getElementById('sessionCount');
+      countEl.textContent = sessions.length;
+
+      if (sessions.length === 0) {
+        const query = searchInput.value.trim();
+        container.innerHTML = `
+          <div class="empty-state">
+            <div class="empty-icon">${query ? '🔍' : '📭'}</div>
+            <p>${query ? `Tidak ada sesi yang cocok untuk "<strong>${query}</strong>"` : 'Belum ada sesi desain customer.'}</p>
+          </div>`;
         return;
       }
 
-      container.innerHTML = allSessions.map(session => {
-        const isSelected = session.session_id === activeSessionId;
-        const lastMsg = session.history && session.history.length > 0 
-          ? session.history[session.history.length - 1].text 
-          : 'Belum ada pesan';
-        const dateStr = new Date(session.updated_at).toLocaleString('id-ID', { dateStyle: 'short', timeStyle: 'short' });
+      container.innerHTML = sessions.map(session => {
+        const isActive = session.session_id === activeSessionId;
+        const lastUserMsg = (session.history || []).find(h => h.role === 'user')?.text || '—';
+        const preview = session.summary || lastUserMsg;
+        const dateStr = new Date(session.updated_at).toLocaleString('id-ID', {
+          day: '2-digit', month: 'short', hour: '2-digit', minute: '2-digit'
+        });
+
+        // Highlight search term in session ID
+        const query = searchInput.value.trim();
+        const highlightedId = query
+          ? session.session_id.replace(new RegExp(`(${query.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')})`, 'gi'),
+              '<mark style="background:rgba(99,102,241,0.35);color:#a5b4fc;border-radius:2px;">$1</mark>')
+          : session.session_id;
 
         return `
-          <div 
-            onclick="selectSession('${session.session_id}')"
-            class="p-4 rounded-xl border cursor-pointer transition ${
-              isSelected 
-                ? 'bg-indigo-950/60 border-indigo-500 shadow-md shadow-indigo-500/10' 
-                : 'bg-slate-900/80 hover:bg-slate-900 border-slate-800 hover:border-slate-700'
-            }"
-          >
-            <div class="flex items-center justify-between gap-2 mb-1.5">
-              <span class="text-xs font-bold font-mono text-indigo-400">${session.session_id}</span>
-              <span class="text-[11px] text-slate-500">${dateStr}</span>
+          <div class="session-card ${isActive ? 'active' : ''}" onclick="selectSession('${session.session_id}')">
+            <div style="display:flex; align-items:center; justify-content:space-between; gap:0.5rem; margin-bottom:0.25rem;">
+              <div class="session-id">${highlightedId}</div>
+              <div class="session-date">${dateStr}</div>
             </div>
-            <p class="text-xs text-slate-200 line-clamp-2 font-medium mb-2">${session.summary || lastMsg}</p>
-            <div class="flex items-center justify-between text-[11px] text-slate-400 pt-2 border-t border-slate-800/60">
-              <span>Generate: <strong class="text-indigo-300">${session.count}/5</strong></span>
-              <span class="text-emerald-400 font-semibold">${session.current_html ? '✓ HTML Ready' : 'Empty'}</span>
+            <p class="session-preview">${preview}</p>
+            <div class="session-meta">
+              <span class="session-meta-count">Generate: <strong>${session.count || 0}/5</strong></span>
+              <span class="${session.current_html ? 'badge-ready' : 'badge-empty'}">${session.current_html ? '✓ HTML Ready' : 'No HTML'}</span>
             </div>
-          </div>
-        `;
+          </div>`;
       }).join('');
     }
 
+    // ══════════════════════════════════════════
+    // SELECT SESSION (DETAIL VIEW)
+    // ══════════════════════════════════════════
     function selectSession(sessionId) {
       activeSessionId = sessionId;
-      renderSessionList();
+      applySearch(); // re-render to update active state
+
       const session = allSessions.find(s => s.session_id === sessionId);
       if (!session) return;
 
-      document.getElementById('detailPlaceholder').classList.add('hidden');
-      document.getElementById('detailContainer').classList.remove('hidden');
-      document.getElementById('detailContainer').classList.add('flex');
+      document.getElementById('detailPlaceholder').style.display = 'none';
+      document.getElementById('detailContainer').classList.add('visible');
 
+      // Header info
       document.getElementById('detailSessionId').textContent = session.session_id;
-      document.getElementById('detailTimestamp').textContent = new Date(session.updated_at).toLocaleString('id-ID');
-      
-      const userFirstPrompt = session.history.find(h => h.role === 'user')?.text || 'Desain Website Custom';
-      document.getElementById('detailTitle').textContent = userFirstPrompt.length > 50 ? userFirstPrompt.substring(0, 50) + '...' : userFirstPrompt;
+      document.getElementById('detailTimestamp').textContent =
+        '⏱ ' + new Date(session.updated_at).toLocaleString('id-ID', {
+          dateStyle: 'medium', timeStyle: 'short'
+        });
 
-      document.getElementById('detailSummary').textContent = session.summary || 'Belum ada ringkasan ter-generate.';
+      const firstUserPrompt = (session.history || []).find(h => h.role === 'user')?.text || 'Desain Website Custom';
+      document.getElementById('detailTitle').textContent =
+        firstUserPrompt.length > 70 ? firstUserPrompt.substring(0, 70) + '…' : firstUserPrompt;
 
-      // WhatsApp Button URL
-      const waMsg = `Halo, saya mengecek referensi desain sesi ID: ${session.session_id}`;
-      document.getElementById('btnContactWa').href = `https://wa.me/6285163612553?text=${encodeURIComponent(waMsg)}`;
+      // Summary
+      document.getElementById('detailSummary').textContent =
+        session.summary || 'Belum ada ringkasan. Customer belum menekan tombol "Lanjutkan Pemesanan".';
 
-      // Render History
-      document.getElementById('chatCount').textContent = session.history.length;
-      document.getElementById('detailHistory').innerHTML = session.history.map(h => `
-        <div class="p-2.5 rounded-lg ${h.role === 'user' ? 'bg-indigo-950/50 text-indigo-200 border border-indigo-900/50' : 'bg-slate-900 text-slate-300 border border-slate-800'}">
-          <span class="font-bold text-[10px] uppercase text-slate-400 block mb-0.5">${h.role} &bull; ${new Date(h.timestamp).toLocaleTimeString()}</span>
-          <p class="leading-relaxed">${h.text}</p>
-        </div>
-      `).join('');
+      // WhatsApp button
+      const waMsg = encodeURIComponent(
+        `Halo, saya dari tim Jose Rizal.\n\nSaya mengecek referensi desain Anda dengan kode sesi: *${session.session_id}*\n\nAda yang bisa kami bantu?`
+      );
+      document.getElementById('btnContactWa').href = `https://wa.me/6285163612553?text=${waMsg}`;
 
-      // Render HTML inside sandboxed iframe
+      // Chat history
+      const history = session.history || [];
+      document.getElementById('chatCount').textContent = history.length;
+      document.getElementById('detailHistory').innerHTML = history.length === 0
+        ? '<p style="font-size:0.75rem; color:var(--slate-400); text-align:center; padding:1rem;">Belum ada riwayat chat.</p>'
+        : history.map(h => `
+            <div class="chat-bubble ${h.role === 'user' ? 'user' : 'assistant'}">
+              <span class="chat-bubble-role">${h.role === 'user' ? '👤 Customer' : '🤖 AI'} · ${h.timestamp ? new Date(h.timestamp).toLocaleTimeString('id-ID', {hour:'2-digit',minute:'2-digit'}) : ''}</span>
+              ${escapeHtml(h.text || '')}
+            </div>`).join('');
+
+      // Preview iframe
       const iframe = document.getElementById('previewIframe');
-      iframe.srcdoc = session.current_html || '<h3 style="font-family:sans-serif;padding:20px;color:#666;">Belum ada HTML ter-generate untuk sesi ini.</h3>';
+      iframe.srcdoc = session.current_html ||
+        '<div style="font-family:sans-serif;padding:40px;text-align:center;color:#666;"><h3>Belum ada HTML ter-generate untuk sesi ini.</h3></div>';
 
+      // Fullscreen button
       document.getElementById('btnOpenNewTab').onclick = () => {
-        const win = window.open();
+        if (!session.current_html) return;
+        const win = window.open('', '_blank');
         win.document.write(session.current_html);
         win.document.close();
       };
     }
 
-    document.getElementById('btnRefresh').addEventListener('click', fetchSessions);
+    function escapeHtml(str) {
+      return String(str)
+        .replace(/&/g, '&amp;')
+        .replace(/</g, '&lt;')
+        .replace(/>/g, '&gt;')
+        .replace(/"/g, '&quot;');
+    }
 
-    // Initial load
-    fetchSessions();
+    // ── Refresh button ──
+    document.getElementById('btnRefresh').addEventListener('click', () => {
+      fetchSessions();
+    });
+
+    // ── Allow Enter key to search instantly (already handled by input event) ──
+    searchInput.addEventListener('keydown', (e) => {
+      if (e.key === 'Escape') {
+        searchInput.value = '';
+        searchClear.classList.remove('visible');
+        applySearch();
+      }
+    });
   </script>
+
 </body>
 </html>
