@@ -1024,11 +1024,7 @@ export default function ${appNameVal.replace(/[^a-zA-Z0-9]/g, '') || 'CustomApp'
     const produkContainer = document.getElementById('produk');
     if (!produkContainer) return;
 
-    try {
-      const res = await fetch('/api/products');
-      if (!res.ok) return;
-
-      const products = await res.json();
+    function renderProductsHTML(products) {
       if (!Array.isArray(products) || products.length === 0) return;
 
       produkContainer.innerHTML = products.map(p => {
@@ -1064,8 +1060,25 @@ export default function ${appNameVal.replace(/[^a-zA-Z0-9]/g, '') || 'CustomApp'
             </div>
           </div>`;
       }).join('');
+    }
+
+    // Hapus cache lama supaya tidak stale
+    try { localStorage.removeItem('ratakiri_public_products'); } catch (e) {}
+
+    // Fetch fresh products from API — selalu ambil data terbaru
+    try {
+      const res = await fetch('/api/products?t=' + Date.now(), {
+        cache: 'no-store',
+        headers: { 'Cache-Control': 'no-cache, no-store, must-revalidate', 'Pragma': 'no-cache' }
+      });
+      if (!res.ok) return;
+
+      const products = await res.json();
+      if (Array.isArray(products) && products.length > 0) {
+        renderProductsHTML(products);
+      }
     } catch (err) {
-      console.warn('Gagal memuat produk dinamis, menggunakan produk default static:', err);
+      console.warn('Gagal memuat produk dinamis dari server:', err);
     }
   }
 

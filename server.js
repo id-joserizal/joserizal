@@ -20,10 +20,20 @@ app.use(cors());
 app.use(express.json({ limit: '10mb' }));
 app.use(express.urlencoded({ extended: true, limit: '10mb' }));
 
-// Static files directory
-app.use(express.static(__dirname));
+// ─────────────────────────────────────────────────────────
+// API Routes — HARUS di atas express.static() agar tidak
+// tertangkap oleh static file server atau catch-all route!
+// ─────────────────────────────────────────────────────────
 
-// API Routes
+// Public product endpoint
+app.all('/api/products', (req, res) => require('./api/products')(req, res));
+
+// Admin endpoints
+app.all('/api/admin/products', (req, res) => require('./api/admin/products')(req, res));
+app.all('/api/admin/login', (req, res) => require('./api/admin/login')(req, res));
+app.all('/api/admin/sessions', (req, res) => require('./api/admin/sessions')(req, res));
+
+// Design preview
 app.post('/api/design-preview', async (req, res) => {
   try {
     const { session_id, prompt, previous_html } = req.body;
@@ -82,6 +92,7 @@ app.post('/api/design-preview', async (req, res) => {
   }
 });
 
+// Generate WhatsApp summary
 app.post('/api/generate-summary', async (req, res) => {
   try {
     const { session_id, prompt } = req.body;
@@ -122,6 +133,7 @@ Mohon info selanjutnya untuk proses pemesanan. Terima kasih.`;
   }
 });
 
+// Get session by ID
 app.get('/api/session/:sessionId', (req, res) => {
   const sessionId = req.params.sessionId;
   const db = readDb();
@@ -131,11 +143,10 @@ app.get('/api/session/:sessionId', (req, res) => {
   return res.json(db[sessionId]);
 });
 
-app.all('/api/products', (req, res) => require('./api/products')(req, res));
-app.all('/api/admin/products', (req, res) => require('./api/admin/products')(req, res));
-app.all('/api/admin/login', (req, res) => require('./api/admin/login')(req, res));
-app.all('/api/admin/sessions', (req, res) => require('./api/admin/sessions')(req, res));
-app.all('/api/generate-summary', (req, res) => require('./api/generate-summary')(req, res));
+// ─────────────────────────────────────────────────────────
+// Static files — dipasang SETELAH API routes
+// ─────────────────────────────────────────────────────────
+app.use(express.static(__dirname));
 
 app.get('/admin', (req, res) => {
   res.sendFile(path.join(__dirname, 'admin.html'));
