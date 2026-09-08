@@ -1155,10 +1155,19 @@ export default function ${appNameVal.replace(/[^a-zA-Z0-9]/g, '') || 'CustomApp'
     btnVibeProceedOrder.addEventListener('click', async (e) => {
       e.preventDefault();
 
+      // PRE-OPEN blank tab SEBELUM fetch (masih dalam user gesture context)
+      // Ini mencegah popup blocker browser memblokir window.open setelah async/await
+      const waTab = window.open('', '_blank');
+
       // Show WA loading overlay
       if (vibeWaLoadingOverlay) {
         vibeWaLoadingOverlay.style.display = 'flex';
       }
+
+      const buildFallbackUrl = () => {
+        const msg = `Halo, saya tertarik untuk memesan jasa pembuatan web/app.\n\nKode referensi desain: ${vibeSessionId || 'N/A'}\n\nMohon info selanjutnya. Terima kasih.`;
+        return `https://wa.me/6285163612553?text=${encodeURIComponent(msg)}`;
+      };
 
       try {
         const response = await fetch('/api/generate-summary', {
@@ -1170,31 +1179,41 @@ export default function ${appNameVal.replace(/[^a-zA-Z0-9]/g, '') || 'CustomApp'
           })
         });
 
-        const data = await response.json();
+        let waUrl = buildFallbackUrl();
 
-        // Brief delay for visual loading experience
-        setTimeout(() => {
-          if (vibeWaLoadingOverlay) {
-            vibeWaLoadingOverlay.style.display = 'none';
-          }
-
+        if (response.ok) {
+          const data = await response.json();
           if (data && data.wa_url) {
-            window.open(data.wa_url, '_blank');
-          } else {
-            // Fallback WhatsApp link if API fails
-            const fallbackMsg = `Halo, saya tertarik untuk memesan jasa pembuatan web/app.\n\nKode referensi desain: ${vibeSessionId}\n\nMohon info selanjutnya. Terima kasih.`;
-            const fallbackUrl = `https://wa.me/6285163612553?text=${encodeURIComponent(fallbackMsg)}`;
-            window.open(fallbackUrl, '_blank');
+            waUrl = data.wa_url;
           }
-        }, 800);
+        } else {
+          console.warn('generate-summary API returned status:', response.status);
+        }
+
+        // Hide loading overlay
+        if (vibeWaLoadingOverlay) {
+          vibeWaLoadingOverlay.style.display = 'none';
+        }
+
+        // Arahkan tab yang sudah dibuka ke URL WhatsApp
+        if (waTab && !waTab.closed) {
+          waTab.location.href = waUrl;
+        } else {
+          // Fallback jika tab sudah ditutup user
+          window.open(waUrl, '_blank');
+        }
 
       } catch (err) {
         console.error('Error proceeding order:', err);
         if (vibeWaLoadingOverlay) {
           vibeWaLoadingOverlay.style.display = 'none';
         }
-        const fallbackMsg = `Halo, saya tertarik untuk memesan jasa pembuatan web/app.\n\nKode referensi desain: ${vibeSessionId}\n\nMohon info selanjutnya. Terima kasih.`;
-        window.open(`https://wa.me/6285163612553?text=${encodeURIComponent(fallbackMsg)}`, '_blank');
+        // Gunakan tab yang sudah dibuka untuk fallback
+        if (waTab && !waTab.closed) {
+          waTab.location.href = buildFallbackUrl();
+        } else {
+          window.open(buildFallbackUrl(), '_blank');
+        }
       }
     });
   }
