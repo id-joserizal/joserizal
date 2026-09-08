@@ -131,11 +131,11 @@ app.get('/api/session/:sessionId', (req, res) => {
   return res.json(db[sessionId]);
 });
 
-app.get('/api/admin/sessions', (req, res) => {
-  const db = readDb();
-  const sessionList = Object.values(db).sort((a, b) => new Date(b.updated_at) - new Date(a.updated_at));
-  return res.json(sessionList);
-});
+app.all('/api/products', (req, res) => require('./api/products')(req, res));
+app.all('/api/admin/products', (req, res) => require('./api/admin/products')(req, res));
+app.all('/api/admin/login', (req, res) => require('./api/admin/login')(req, res));
+app.all('/api/admin/sessions', (req, res) => require('./api/admin/sessions')(req, res));
+app.all('/api/generate-summary', (req, res) => require('./api/generate-summary')(req, res));
 
 app.get('/admin', (req, res) => {
   res.sendFile(path.join(__dirname, 'admin.html'));

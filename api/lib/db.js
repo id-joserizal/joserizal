@@ -372,12 +372,118 @@ async function generateSummaryWithGemini(history, currentPrompt) {
   }
 }
 
+const PRODUCTS_KEY = 'ratakiri:products';
+const PRODUCTS_FILE = path.join(DATA_DIR, 'products.json');
+
+const DEFAULT_PRODUCTS = [
+  {
+    id: 'prod_dev_app',
+    name: 'DEVELOPER APP',
+    badge: 'FEATURED SERVICE',
+    image: '/assets/images/image1.png',
+    features: [
+      'Web & Mobile App Custom',
+      'Clean Architecture & Fast Performance',
+      'API Integration & Deployment'
+    ],
+    price: 'CUSTOM',
+    btn_type: 'vibe_preview',
+    btn_text: '⚡ COBA DESAIN DULU',
+    btn_link: '',
+    active: true,
+    order: 1
+  },
+  {
+    id: 'prod_ui_ux',
+    name: 'DESAIN UI/UX & BRANDING',
+    badge: 'MOST POPULAR',
+    image: '/assets/images/profile.jpg',
+    features: [
+      'Desain Antarmuka UI/UX Modern',
+      'Identitas Visual & System Design',
+      'High-Fidelity Prototype Ready'
+    ],
+    price: 'CUSTOM',
+    btn_type: 'web_builder',
+    btn_text: 'PESAN DESAIN',
+    btn_link: '',
+    active: true,
+    order: 2
+  },
+  {
+    id: 'prod_ebook',
+    name: 'EBOOK & GUIDE KREATIF',
+    badge: 'DIGITAL PRODUCT',
+    image: '/assets/images/image2.png',
+    features: [
+      'Panduan Pemrograman & Desain',
+      'Case Study & Source Code Lengkap',
+      'Akses Gratis Update Selamanya'
+    ],
+    price: 'EBOOK',
+    btn_type: 'custom_link',
+    btn_text: 'BELI EBOOK',
+    btn_link: '#footer',
+    active: true,
+    order: 3
+  }
+];
+
+async function getProducts() {
+  if (USE_REDIS) {
+    try {
+      const raw = await redisExec('GET', PRODUCTS_KEY);
+      if (raw) {
+        const parsed = JSON.parse(raw);
+        if (Array.isArray(parsed) && parsed.length > 0) return parsed;
+      }
+      await redisExec('SET', PRODUCTS_KEY, JSON.stringify(DEFAULT_PRODUCTS));
+      return DEFAULT_PRODUCTS;
+    } catch (err) {
+      console.warn('Redis getProducts error, fallback to file:', err.message);
+    }
+  }
+
+  ensureDbExists();
+  try {
+    if (!fs.existsSync(PRODUCTS_FILE)) {
+      fs.writeFileSync(PRODUCTS_FILE, JSON.stringify(DEFAULT_PRODUCTS, null, 2), 'utf8');
+      return DEFAULT_PRODUCTS;
+    }
+    const data = JSON.parse(fs.readFileSync(PRODUCTS_FILE, 'utf8'));
+    return Array.isArray(data) ? data : DEFAULT_PRODUCTS;
+  } catch (e) {
+    return DEFAULT_PRODUCTS;
+  }
+}
+
+async function saveProducts(products) {
+  if (USE_REDIS) {
+    try {
+      await redisExec('SET', PRODUCTS_KEY, JSON.stringify(products));
+    } catch (err) {
+      console.warn('Redis saveProducts error:', err.message);
+    }
+  }
+
+  ensureDbExists();
+  try {
+    fs.writeFileSync(PRODUCTS_FILE, JSON.stringify(products, null, 2), 'utf8');
+  } catch (e) {
+    console.error('File saveProducts error:', e.message);
+  }
+  return true;
+}
+
 module.exports = {
   readDb,
   writeDb,
   getSession,
   updateSession,
   getAllSessions,
+  getProducts,
+  saveProducts,
   generateHtmlWithGemini,
   generateSummaryWithGemini
 };
+

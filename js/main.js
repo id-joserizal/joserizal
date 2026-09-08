@@ -994,17 +994,82 @@ export default function ${appNameVal.replace(/[^a-zA-Z0-9]/g, '') || 'CustomApp'
   let vibeLastPrompt = '';
   let vibeGeneratedCount = 0;
 
-  // Open Vibe Preview Modal
-  if (btnOpenVibePreview) {
-    btnOpenVibePreview.addEventListener('click', (e) => {
+  // Open Vibe Preview & Web Builder Modal via Event Delegation (supports dynamic cards)
+  document.addEventListener('click', (e) => {
+    const vibeBtn = e.target.closest('.btn-open-vibe-preview') || e.target.closest('#btnOpenVibePreview');
+    if (vibeBtn) {
       e.preventDefault();
       if (vibePreviewModal) {
         vibePreviewModal.classList.add('active');
         vibePreviewModal.setAttribute('aria-hidden', 'false');
         document.body.style.overflow = 'hidden';
       }
-    });
+      return;
+    }
+
+    const builderBtn = e.target.closest('.btn-open-web-builder');
+    if (builderBtn) {
+      e.preventDefault();
+      if (webBuilderModal) {
+        webBuilderModal.classList.add('active');
+        webBuilderModal.setAttribute('aria-hidden', 'false');
+        document.body.style.overflow = 'hidden';
+      }
+      return;
+    }
+  });
+
+  // ── Load Dynamic Products from API ──
+  async function loadDynamicProducts() {
+    const produkContainer = document.getElementById('produk');
+    if (!produkContainer) return;
+
+    try {
+      const res = await fetch('/api/products');
+      if (!res.ok) return;
+
+      const products = await res.json();
+      if (!Array.isArray(products) || products.length === 0) return;
+
+      produkContainer.innerHTML = products.map(p => {
+        let btnHtml = '';
+        if (p.btn_type === 'vibe_preview') {
+          btnHtml = `<button type="button" class="btn-dark-card btn-open-vibe-preview" style="background: linear-gradient(135deg, #6366F1, #8B5CF6); border: none; color: #fff;">${p.btn_text || '⚡ COBA DESAIN DULU'}</button>`;
+        } else if (p.btn_type === 'web_builder') {
+          btnHtml = `<button type="button" class="btn-dark-card btn-open-web-builder">${p.btn_text || 'PESAN DESAIN'}</button>`;
+        } else {
+          btnHtml = `<a href="${p.btn_link || '#footer'}" class="btn-dark-card">${p.btn_text || 'DETAIL'}</a>`;
+        }
+
+        const featuresList = (p.features || []).map(f => `<li>&bull; ${f}</li>`).join('');
+
+        return `
+          <div class="edition-card">
+            <span class="edition-badge">${p.badge || 'PRODUCT'}</span>
+            <div class="edition-image-box">
+              <img src="${p.image || '/assets/images/image1.png'}" alt="${p.name}" class="edition-img">
+            </div>
+            <div class="edition-content">
+              <div>
+                <h3 class="edition-name">${p.name}</h3>
+                <ul class="edition-desc-list">
+                  ${featuresList}
+                </ul>
+              </div>
+              <div class="edition-footer-row" style="flex-wrap: wrap; gap: 0.5rem;">
+                <span class="edition-price">${p.price || 'CUSTOM'}</span>
+                ${btnHtml}
+              </div>
+            </div>
+          </div>`;
+      }).join('');
+    } catch (err) {
+      console.warn('Gagal memuat produk dinamis, menggunakan produk default static:', err);
+    }
   }
+
+  loadDynamicProducts();
+
 
   // Close Vibe Preview Modal
   if (btnCloseVibeModal) {
