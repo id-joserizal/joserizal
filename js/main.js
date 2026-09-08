@@ -1133,11 +1133,11 @@ export default function ${appNameVal.replace(/[^a-zA-Z0-9]/g, '') || 'CustomApp'
 
       // ── Cycling loading step messages ──
       const loadingSteps = [
-        '🔍 Menganalisis permintaan Anda...',
-        '✏️ Menyusun struktur HTML & layout...',
-        '🎨 Menerapkan palet warna & tipografi...',
-        '⚙️ Mengoptimalkan komponen UI...',
-        '✨ Finishing touch & merapikan kode...'
+        'Menganalisis permintaan Anda...',
+        'Menyusun struktur HTML & layout...',
+        'Menerapkan palet warna & tipografi...',
+        'Mengoptimalkan komponen UI...',
+        'Finishing touch & merapikan kode...'
       ];
       const vibeLoadingStep = document.getElementById('vibeLoadingStep');
       let stepIdx = 0;

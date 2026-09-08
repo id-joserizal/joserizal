@@ -686,7 +686,7 @@ export default function WebsiteApp() {
       <!-- Top Bar Header -->
       <div class="vibe-modal-header">
         <div class="vibe-header-left">
-          <div class="vibe-logo-badge">⚡ VIBE CODING AI</div>
+          <div class="vibe-logo-badge">VIBE CODING AI</div>
           <div>
             <h2 class="vibe-header-title">PREVIEW INSTAN DESAIN WEBSITE</h2>
             <p class="vibe-header-sub">Deskripsikan ide website Anda di panel chat, AI akan langsung membuatkan preview HTML real-time!</p>
@@ -694,7 +694,6 @@ export default function WebsiteApp() {
         </div>
         <div class="vibe-header-right">
           <div class="vibe-quota-pill" id="vibeQuotaBadge">
-            <span class="vibe-quota-icon">🔄</span>
             <span id="vibeQuotaText">5 dari 5 percobaan tersisa</span>
           </div>
           <button type="button" class="vibe-close-btn" id="btnCloseVibeModal" aria-label="Tutup Modal">&times;</button>
@@ -704,10 +703,10 @@ export default function WebsiteApp() {
       <!-- Mobile View Switcher Tabs (Visible on Mobile Only) -->
       <div class="vibe-mobile-tabs" id="vibeMobileTabs">
         <button type="button" class="vibe-tab-btn active" id="vibeTabChat" data-tab="chat">
-          💬 Chat AI
+          Chat AI
         </button>
         <button type="button" class="vibe-tab-btn" id="vibeTabPreview" data-tab="preview">
-          👁️ Preview Web <span class="vibe-tab-badge" id="vibePreviewBadge" style="display:none;">Baru!</span>
+          Preview Web <span class="vibe-tab-badge" id="vibePreviewBadge" style="display:none;">Baru!</span>
         </button>
       </div>
 
@@ -737,7 +736,7 @@ export default function WebsiteApp() {
                 <span></span><span></span><span></span>
               </div>
             </div>
-            <div id="vibeLoadingStep">🔍 Menganalisis permintaan Anda...</div>
+            <div id="vibeLoadingStep">Menganalisis permintaan Anda...</div>
           </div>
 
           <!-- Quota Limit Exceeded Alert (Hidden by default) -->
@@ -779,7 +778,7 @@ export default function WebsiteApp() {
         <div class="vibe-preview-col">
           <!-- Floating Chat Button for Mobile View -->
           <button type="button" class="vibe-floating-chat-btn" id="vibeFloatingChatBtn" title="Ubah Desain">
-            💬 Ubah Desain (Chat)
+            Ubah Desain (Chat)
           </button>
           <!-- Browser Chrome Header -->
           <div class="vibe-chrome-header">
@@ -795,8 +794,8 @@ export default function WebsiteApp() {
               <span id="vibeUrlDisplay">https://preview.joserizal.com/vibe-preview</span>
             </div>
             <div class="vibe-chrome-actions">
-              <button type="button" class="vibe-device-btn active" id="btnDeviceDesktop" title="Tampilan Desktop">💻 Desktop</button>
-              <button type="button" class="vibe-device-btn" id="btnDeviceMobile" title="Tampilan Mobile HP">📱 Mobile</button>
+              <button type="button" class="vibe-device-btn active" id="btnDeviceDesktop" title="Tampilan Desktop">Desktop</button>
+              <button type="button" class="vibe-device-btn" id="btnDeviceMobile" title="Tampilan Mobile HP">Mobile</button>
             </div>
           </div>
 
@@ -804,7 +803,6 @@ export default function WebsiteApp() {
           <div class="vibe-iframe-wrapper" id="vibeIframeWrapper" style="position:relative;">
             <!-- Initial Empty State Placeholder -->
             <div class="vibe-empty-placeholder" id="vibeEmptyPlaceholder">
-              <div class="vibe-empty-icon">⚡</div>
               <h3>Belum Ada Hasil Preview</h3>
               <p>Tuliskan deskripsi website impian Anda pada kolom chat di sebelah kiri, lalu tekan <strong>Kirim</strong> untuk merender preview visual secara otomatis!</p>
             </div>
@@ -823,7 +821,7 @@ export default function WebsiteApp() {
                 <div class="skel-col"></div>
               </div>
               <div class="skel-bar" style="height:40px; margin-top:auto;"></div>
-              <div class="skel-label">⚡ AI sedang merender desain website Anda...</div>
+              <div class="skel-label">AI sedang merender desain website Anda...</div>
             </div>
 
             <!-- Real-time Sandboxed Rendered Iframe -->
