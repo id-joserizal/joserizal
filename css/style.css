@@ -3261,30 +3261,156 @@ a {
 /* Loading Indicator */
 .vibe-loading-indicator {
   display: flex;
-  align-items: center;
-  gap: 0.75rem;
-  background: rgba(99, 102, 241, 0.1);
-  border: 1px solid rgba(99, 102, 241, 0.3);
-  padding: 0.75rem 1rem;
-  border-radius: 10px;
+  flex-direction: column;
+  gap: 0.625rem;
+  background: linear-gradient(135deg, rgba(99,102,241,0.12), rgba(139,92,246,0.08));
+  border: 1px solid rgba(99, 102, 241, 0.35);
+  padding: 1rem 1.125rem;
+  border-radius: 12px;
   color: #A5B4FC;
   font-size: 0.8rem;
   font-weight: 500;
+  position: relative;
+  overflow: hidden;
+}
+
+/* Shimmer sweep across loading card */
+.vibe-loading-indicator::after {
+  content: '';
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(90deg, transparent, rgba(99,102,241,0.06), transparent);
+  animation: vibeShimmer 1.8s ease-in-out infinite;
+}
+
+@keyframes vibeShimmer {
+  0% { transform: translateX(-100%); }
+  100% { transform: translateX(100%); }
+}
+
+.vibe-loading-top {
+  display: flex;
+  align-items: center;
+  gap: 0.625rem;
 }
 
 .vibe-spinner {
   width: 18px;
   height: 18px;
-  border: 2.5px solid rgba(165, 180, 252, 0.3);
+  border: 2.5px solid rgba(165, 180, 252, 0.25);
   border-top-color: #6366F1;
+  border-right-color: #8B5CF6;
   border-radius: 50%;
-  animation: vibeSpin 0.8s linear infinite;
+  animation: vibeSpin 0.75s linear infinite;
   flex-shrink: 0;
 }
 
 @keyframes vibeSpin {
   to { transform: rotate(360deg); }
 }
+
+/* Animated progress dots */
+.vibe-loading-dots {
+  display: flex;
+  gap: 4px;
+  align-items: center;
+}
+
+.vibe-loading-dots span {
+  width: 5px;
+  height: 5px;
+  border-radius: 50%;
+  background: rgba(99,102,241,0.5);
+  animation: vibeDotPulse 1.2s ease-in-out infinite;
+}
+
+.vibe-loading-dots span:nth-child(2) { animation-delay: 0.2s; }
+.vibe-loading-dots span:nth-child(3) { animation-delay: 0.4s; }
+
+@keyframes vibeDotPulse {
+  0%, 80%, 100% { transform: scale(0.7); opacity: 0.4; }
+  40% { transform: scale(1.15); opacity: 1; background: #818CF8; }
+}
+
+/* Step text that will be cycled by JS */
+#vibeLoadingStep {
+  font-size: 0.75rem;
+  color: #818CF8;
+  font-style: italic;
+  padding-left: 1.625rem; /* indent to align under spinner */
+}
+
+/* ── IFRAME SKELETON (shown while generating) ── */
+.vibe-iframe-skeleton {
+  display: none;
+  position: absolute;
+  inset: 0;
+  background: #0f172a;
+  z-index: 5;
+  padding: 1.5rem;
+  flex-direction: column;
+  gap: 1rem;
+  overflow: hidden;
+}
+
+.vibe-iframe-skeleton.active { display: flex; }
+
+.skel-bar {
+  border-radius: 6px;
+  background: linear-gradient(90deg, #1e293b 25%, #263147 50%, #1e293b 75%);
+  background-size: 200% 100%;
+  animation: skelMove 1.4s ease-in-out infinite;
+}
+
+@keyframes skelMove {
+  0% { background-position: 200% 0; }
+  100% { background-position: -200% 0; }
+}
+
+.skel-header {
+  height: 52px;
+  border-radius: 8px;
+  background: linear-gradient(90deg, #1e293b 25%, #263147 50%, #1e293b 75%);
+  background-size: 200% 100%;
+  animation: skelMove 1.4s ease-in-out infinite;
+}
+
+.skel-hero {
+  height: 180px;
+  border-radius: 10px;
+  background: linear-gradient(90deg, rgba(99,102,241,0.08) 25%, rgba(99,102,241,0.14) 50%, rgba(99,102,241,0.08) 75%);
+  background-size: 200% 100%;
+  animation: skelMove 1.4s ease-in-out 0.1s infinite;
+}
+
+.skel-row {
+  display: flex;
+  gap: 0.75rem;
+}
+
+.skel-col {
+  flex: 1;
+  height: 80px;
+  border-radius: 8px;
+  background: linear-gradient(90deg, #1e293b 25%, #263147 50%, #1e293b 75%);
+  background-size: 200% 100%;
+  animation: skelMove 1.4s ease-in-out 0.2s infinite;
+}
+
+.skel-label {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.5rem;
+  color: rgba(99,102,241,0.5);
+  font-size: 0.7rem;
+  font-weight: 600;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  margin-top: auto;
+}
+
+
 
 /* Quota Limit Alert */
 .vibe-limit-alert {

@@ -1075,10 +1075,45 @@ export default function ${appNameVal.replace(/[^a-zA-Z0-9]/g, '') || 'CustomApp'
       appendChatBubble('user', promptText);
       if (vibeInputPrompt) vibeInputPrompt.value = '';
 
-      // UI Loading state
+      // ── UI Loading state ──
       if (vibeLoadingIndicator) vibeLoadingIndicator.style.display = 'flex';
       if (btnVibeSend) btnVibeSend.disabled = true;
       if (vibeInputPrompt) vibeInputPrompt.disabled = true;
+
+      // Tampilkan skeleton di preview panel
+      const vibeIframeSkeleton = document.getElementById('vibeIframeSkeleton');
+      const vibeEmptyPlaceholder = document.getElementById('vibeEmptyPlaceholder');
+      if (vibeIframeSkeleton) {
+        vibeIframeSkeleton.classList.add('active');
+        if (vibeEmptyPlaceholder) vibeEmptyPlaceholder.style.display = 'none';
+      }
+
+      // ── Cycling loading step messages ──
+      const loadingSteps = [
+        '🔍 Menganalisis permintaan Anda...',
+        '✏️ Menyusun struktur HTML & layout...',
+        '🎨 Menerapkan palet warna & tipografi...',
+        '⚙️ Mengoptimalkan komponen UI...',
+        '✨ Finishing touch & merapikan kode...'
+      ];
+      const vibeLoadingStep = document.getElementById('vibeLoadingStep');
+      let stepIdx = 0;
+      const stepInterval = setInterval(() => {
+        stepIdx = (stepIdx + 1) % loadingSteps.length;
+        if (vibeLoadingStep) {
+          vibeLoadingStep.style.opacity = '0';
+          setTimeout(() => {
+            if (vibeLoadingStep) {
+              vibeLoadingStep.textContent = loadingSteps[stepIdx];
+              vibeLoadingStep.style.opacity = '1';
+            }
+          }, 200);
+        }
+      }, 2200);
+
+      // Set initial step text
+      if (vibeLoadingStep) vibeLoadingStep.textContent = loadingSteps[0];
+      if (vibeLoadingStep) vibeLoadingStep.style.transition = 'opacity 0.2s ease';
 
       try {
         const response = await fetch('/api/design-preview', {
@@ -1093,7 +1128,11 @@ export default function ${appNameVal.replace(/[^a-zA-Z0-9]/g, '') || 'CustomApp'
 
         const data = await response.json();
 
+        // Hentikan cycling steps
+        clearInterval(stepInterval);
+
         if (vibeLoadingIndicator) vibeLoadingIndicator.style.display = 'none';
+        if (vibeIframeSkeleton) vibeIframeSkeleton.classList.remove('active');
 
         if (!response.ok) {
           if (data.quota_exceeded) {
@@ -1142,7 +1181,9 @@ export default function ${appNameVal.replace(/[^a-zA-Z0-9]/g, '') || 'CustomApp'
 
       } catch (err) {
         console.error('Error generating preview:', err);
+        clearInterval(stepInterval);
         if (vibeLoadingIndicator) vibeLoadingIndicator.style.display = 'none';
+        if (vibeIframeSkeleton) vibeIframeSkeleton.classList.remove('active');
         if (btnVibeSend) btnVibeSend.disabled = false;
         if (vibeInputPrompt) vibeInputPrompt.disabled = false;
         appendChatBubble('assistant', 'Terjadi masalah koneksi ke server preview. Mohon periksa jaringan Anda dan coba lagi.');
@@ -1155,9 +1196,57 @@ export default function ${appNameVal.replace(/[^a-zA-Z0-9]/g, '') || 'CustomApp'
     btnVibeProceedOrder.addEventListener('click', async (e) => {
       e.preventDefault();
 
-      // PRE-OPEN blank tab SEBELUM fetch (masih dalam user gesture context)
-      // Ini mencegah popup blocker browser memblokir window.open setelah async/await
+      // PRE-OPEN tab dengan halaman redirect informatif (bukan blank)
+      // Ini tetap dalam user gesture context, TAPI user langsung lihat konten
       const waTab = window.open('', '_blank');
+      if (waTab) {
+        waTab.document.write(`<!DOCTYPE html>
+<html lang="id">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Mengarahkan ke WhatsApp...</title>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700&display=swap" rel="stylesheet">
+  <style>
+    * { margin:0; padding:0; box-sizing:border-box; }
+    body {
+      font-family: 'Inter', sans-serif;
+      background: #0f172a;
+      color: #f1f5f9;
+      min-height: 100vh;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      flex-direction: column;
+      gap: 1.5rem;
+      text-align: center;
+      padding: 2rem;
+    }
+    .icon { font-size: 3.5rem; animation: pulse 1.2s ease-in-out infinite; }
+    @keyframes pulse { 0%,100%{transform:scale(1);} 50%{transform:scale(1.08);} }
+    h1 { font-size: 1.25rem; font-weight: 700; color: #f1f5f9; }
+    p { font-size: 0.875rem; color: #94a3b8; max-width: 320px; }
+    .spinner {
+      width: 36px; height: 36px;
+      border: 3px solid rgba(37,211,102,0.2);
+      border-top-color: #25D366;
+      border-radius: 50%;
+      animation: spin 0.8s linear infinite;
+    }
+    @keyframes spin { to { transform: rotate(360deg); } }
+    .note { font-size: 0.75rem; color: #475569; margin-top: 0.5rem; }
+  </style>
+</head>
+<body>
+  <div class="icon">💬</div>
+  <div class="spinner"></div>
+  <h1>Menyiapkan pesan WhatsApp...</h1>
+  <p>AI sedang merangkum kebutuhan desain Anda. Sebentar lagi Anda akan diarahkan ke WhatsApp tim sales.</p>
+  <p class="note">Jangan tutup tab ini.</p>
+</body>
+</html>`);
+        waTab.document.close();
+      }
 
       // Show WA loading overlay
       if (vibeWaLoadingOverlay) {
