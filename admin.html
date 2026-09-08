@@ -1,0 +1,235 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Admin Dashboard — Vibe Coding Preview Sessions</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+  <script src="https://cdn.tailwindcss.com"></script>
+  <style>
+    body { font-family: 'Inter', sans-serif; }
+    .custom-scrollbar::-webkit-scrollbar { width: 6px; }
+    .custom-scrollbar::-webkit-scrollbar-track { background: #0f172a; }
+    .custom-scrollbar::-webkit-scrollbar-thumb { background: #334155; border-radius: 999px; }
+  </style>
+</head>
+<body class="bg-slate-950 text-slate-100 min-h-screen flex flex-col">
+
+  <!-- Admin Header -->
+  <header class="bg-slate-900/80 backdrop-blur-md border-b border-slate-800 sticky top-0 z-50">
+    <div class="max-w-7xl mx-auto px-6 py-4 flex items-center justify-between">
+      <div class="flex items-center gap-3">
+        <div class="w-9 h-9 rounded-lg bg-indigo-600 flex items-center justify-center font-bold text-lg text-white shadow-md shadow-indigo-500/30">
+          ⚡
+        </div>
+        <div>
+          <h1 class="font-bold text-lg text-white leading-none">JOSE RIZAL — ADMIN DASHBOARD</h1>
+          <p class="text-xs text-slate-400 mt-0.5">Daftar Sesi &amp; Referensi Desain Vibe Coding Preview</p>
+        </div>
+      </div>
+      <div class="flex items-center gap-3">
+        <a href="/" class="text-xs font-semibold text-slate-300 hover:text-white bg-slate-800 hover:bg-slate-700 px-4 py-2 rounded-lg transition border border-slate-700">
+          &larr; Ke Website Katalog
+        </a>
+        <button id="btnRefresh" class="text-xs font-semibold text-white bg-indigo-600 hover:bg-indigo-500 px-4 py-2 rounded-lg transition shadow-md shadow-indigo-600/20">
+          🔄 Refresh Data
+        </button>
+      </div>
+    </div>
+  </header>
+
+  <!-- Admin Main Layout -->
+  <main class="max-w-7xl mx-auto px-6 py-8 flex-grow w-full grid grid-cols-1 lg:grid-cols-12 gap-8">
+    
+    <!-- Left Column: Session List (4 cols) -->
+    <div class="lg:col-span-4 space-y-4">
+      <div class="flex items-center justify-between">
+        <h2 class="text-sm font-bold text-slate-300 uppercase tracking-wider">Daftar Sesi Customer (<span id="sessionCount">0</span>)</h2>
+        <span class="text-xs text-indigo-400 font-mono" id="lastUpdated">Updated just now</span>
+      </div>
+
+      <div id="sessionList" class="space-y-3 max-h-[calc(100vh-180px)] overflow-y-auto custom-scrollbar pr-1">
+        <!-- Rendered dynamically -->
+        <div class="p-8 text-center bg-slate-900/50 rounded-xl border border-slate-800 text-slate-500 text-sm">
+          Loading data sesi...
+        </div>
+      </div>
+    </div>
+
+    <!-- Right Column: Detail Session Preview (8 cols) -->
+    <div class="lg:col-span-8 flex flex-col space-y-4">
+      <div id="detailPlaceholder" class="p-12 text-center bg-slate-900/40 rounded-2xl border border-slate-800/80 flex flex-col items-center justify-center min-h-[500px]">
+        <div class="w-16 h-16 rounded-2xl bg-slate-800 flex items-center justify-center text-3xl mb-4 text-slate-400">
+          📋
+        </div>
+        <h3 class="text-lg font-bold text-slate-200 mb-1">Pilih Sesi Customer</h3>
+        <p class="text-slate-400 text-sm max-w-sm">Klik salah satu sesi di panel kiri untuk melihat ringkasan kebutuhan, riwayat chat, dan render HTML preview lengkap.</p>
+      </div>
+
+      <div id="detailContainer" class="hidden flex-col space-y-6">
+        <!-- Session Overview Card -->
+        <div class="bg-slate-900 p-6 rounded-2xl border border-slate-800 space-y-4">
+          <div class="flex flex-wrap items-center justify-between gap-4 border-b border-slate-800 pb-4">
+            <div>
+              <div class="flex items-center gap-2">
+                <span class="text-xs font-bold font-mono px-2.5 py-1 rounded bg-indigo-500/20 text-indigo-300 border border-indigo-500/30" id="detailSessionId">sess_123</span>
+                <span class="text-xs text-slate-400" id="detailTimestamp">2026-09-08</span>
+              </div>
+              <h3 class="text-xl font-bold text-white mt-2" id="detailTitle">Preview Desain Customer</h3>
+            </div>
+
+            <div class="flex items-center gap-2">
+              <a id="btnContactWa" href="#" target="_blank" class="bg-emerald-600 hover:bg-emerald-500 text-white font-semibold text-xs px-4 py-2.5 rounded-lg flex items-center gap-2 shadow-lg shadow-emerald-600/20 transition">
+                <span>💬</span> Hubungi via WA
+              </a>
+            </div>
+          </div>
+
+          <!-- Summary Box -->
+          <div class="space-y-2">
+            <h4 class="text-xs font-bold uppercase tracking-wider text-slate-400">Ringkasan Kebutuhan Desain (Gemini Generated):</h4>
+            <div id="detailSummary" class="bg-slate-950 p-4 rounded-xl border border-slate-800 text-slate-300 text-sm leading-relaxed font-medium">
+              -
+            </div>
+          </div>
+
+          <!-- Chat History Collapsible -->
+          <details class="group bg-slate-950/60 rounded-xl border border-slate-800/80 overflow-hidden">
+            <summary class="p-4 text-xs font-bold text-slate-300 uppercase tracking-wider cursor-pointer flex items-center justify-between select-none hover:bg-slate-900/40">
+              <span>💬 Riwayat Percakapan Chat AI (<span id="chatCount">0</span> pesan)</span>
+              <span class="transition-transform group-open:rotate-180">&darr;</span>
+            </summary>
+            <div id="detailHistory" class="p-4 border-t border-slate-800 space-y-3 max-h-60 overflow-y-auto custom-scrollbar text-xs">
+              <!-- Chat history lines -->
+            </div>
+          </details>
+        </div>
+
+        <!-- Rendered Iframe Preview Card -->
+        <div class="bg-slate-900 rounded-2xl border border-slate-800 overflow-hidden flex flex-col flex-grow min-h-[600px]">
+          <div class="bg-slate-800/80 px-4 py-3 border-b border-slate-700 flex items-center justify-between">
+            <div class="flex items-center gap-2">
+              <span class="w-3 h-3 rounded-full bg-red-500/80"></span>
+              <span class="w-3 h-3 rounded-full bg-yellow-500/80"></span>
+              <span class="w-3 h-3 rounded-full bg-green-500/80"></span>
+              <span class="text-xs font-mono text-slate-300 ml-2">Sandbox Render Preview Canvas</span>
+            </div>
+            <button id="btnOpenNewTab" class="text-xs font-semibold text-indigo-400 hover:text-indigo-300 transition">
+              ↗️ Buka Fullscreen
+            </button>
+          </div>
+
+          <iframe id="previewIframe" class="w-full flex-grow border-0 bg-white" sandbox="allow-scripts allow-same-origin"></iframe>
+        </div>
+      </div>
+
+    </div>
+  </main>
+
+  <script>
+    let allSessions = [];
+    let activeSessionId = null;
+
+    async function fetchSessions() {
+      try {
+        const res = await fetch('/api/admin/sessions');
+        if (!res.ok) throw new Error('Gagal mengambil data sesi');
+        allSessions = await res.json();
+        renderSessionList();
+        document.getElementById('lastUpdated').textContent = 'Updated at ' + new Date().toLocaleTimeString();
+      } catch (err) {
+        console.error(err);
+        document.getElementById('sessionList').innerHTML = `<div class="p-4 bg-red-950/40 border border-red-800 text-red-300 text-xs rounded-xl text-center">Gagal memuat data sesi server.</div>`;
+      }
+    }
+
+    function renderSessionList() {
+      const container = document.getElementById('sessionList');
+      document.getElementById('sessionCount').textContent = allSessions.length;
+
+      if (allSessions.length === 0) {
+        container.innerHTML = `<div class="p-8 text-center bg-slate-900/50 rounded-xl border border-slate-800 text-slate-400 text-xs">Belum ada sesi desain customer.</div>`;
+        return;
+      }
+
+      container.innerHTML = allSessions.map(session => {
+        const isSelected = session.session_id === activeSessionId;
+        const lastMsg = session.history && session.history.length > 0 
+          ? session.history[session.history.length - 1].text 
+          : 'Belum ada pesan';
+        const dateStr = new Date(session.updated_at).toLocaleString('id-ID', { dateStyle: 'short', timeStyle: 'short' });
+
+        return `
+          <div 
+            onclick="selectSession('${session.session_id}')"
+            class="p-4 rounded-xl border cursor-pointer transition ${
+              isSelected 
+                ? 'bg-indigo-950/60 border-indigo-500 shadow-md shadow-indigo-500/10' 
+                : 'bg-slate-900/80 hover:bg-slate-900 border-slate-800 hover:border-slate-700'
+            }"
+          >
+            <div class="flex items-center justify-between gap-2 mb-1.5">
+              <span class="text-xs font-bold font-mono text-indigo-400">${session.session_id}</span>
+              <span class="text-[11px] text-slate-500">${dateStr}</span>
+            </div>
+            <p class="text-xs text-slate-200 line-clamp-2 font-medium mb-2">${session.summary || lastMsg}</p>
+            <div class="flex items-center justify-between text-[11px] text-slate-400 pt-2 border-t border-slate-800/60">
+              <span>Generate: <strong class="text-indigo-300">${session.count}/5</strong></span>
+              <span class="text-emerald-400 font-semibold">${session.current_html ? '✓ HTML Ready' : 'Empty'}</span>
+            </div>
+          </div>
+        `;
+      }).join('');
+    }
+
+    function selectSession(sessionId) {
+      activeSessionId = sessionId;
+      renderSessionList();
+      const session = allSessions.find(s => s.session_id === sessionId);
+      if (!session) return;
+
+      document.getElementById('detailPlaceholder').classList.add('hidden');
+      document.getElementById('detailContainer').classList.remove('hidden');
+      document.getElementById('detailContainer').classList.add('flex');
+
+      document.getElementById('detailSessionId').textContent = session.session_id;
+      document.getElementById('detailTimestamp').textContent = new Date(session.updated_at).toLocaleString('id-ID');
+      
+      const userFirstPrompt = session.history.find(h => h.role === 'user')?.text || 'Desain Website Custom';
+      document.getElementById('detailTitle').textContent = userFirstPrompt.length > 50 ? userFirstPrompt.substring(0, 50) + '...' : userFirstPrompt;
+
+      document.getElementById('detailSummary').textContent = session.summary || 'Belum ada ringkasan ter-generate.';
+
+      // WhatsApp Button URL
+      const waMsg = `Halo, saya mengecek referensi desain sesi ID: ${session.session_id}`;
+      document.getElementById('btnContactWa').href = `https://wa.me/6285163612553?text=${encodeURIComponent(waMsg)}`;
+
+      // Render History
+      document.getElementById('chatCount').textContent = session.history.length;
+      document.getElementById('detailHistory').innerHTML = session.history.map(h => `
+        <div class="p-2.5 rounded-lg ${h.role === 'user' ? 'bg-indigo-950/50 text-indigo-200 border border-indigo-900/50' : 'bg-slate-900 text-slate-300 border border-slate-800'}">
+          <span class="font-bold text-[10px] uppercase text-slate-400 block mb-0.5">${h.role} &bull; ${new Date(h.timestamp).toLocaleTimeString()}</span>
+          <p class="leading-relaxed">${h.text}</p>
+        </div>
+      `).join('');
+
+      // Render HTML inside sandboxed iframe
+      const iframe = document.getElementById('previewIframe');
+      iframe.srcdoc = session.current_html || '<h3 style="font-family:sans-serif;padding:20px;color:#666;">Belum ada HTML ter-generate untuk sesi ini.</h3>';
+
+      document.getElementById('btnOpenNewTab').onclick = () => {
+        const win = window.open();
+        win.document.write(session.current_html);
+        win.document.close();
+      };
+    }
+
+    document.getElementById('btnRefresh').addEventListener('click', fetchSessions);
+
+    // Initial load
+    fetchSessions();
+  </script>
+</body>
+</html>
