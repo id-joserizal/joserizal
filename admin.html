@@ -672,13 +672,26 @@
         </div>
 
         <div class="form-group">
-          <label class="form-label" for="prodInputImage">URL Gambar Thumbnail</label>
-          <input type="text" id="prodInputImage" class="form-input" placeholder="/assets/images/image1.png" value="/assets/images/image1.png">
-          <div style="display: flex; gap: 0.5rem; margin-top: 0.5rem; font-size: 0.7rem; color: var(--slate-400);">
-            <span>Preset:</span>
-            <button type="button" onclick="document.getElementById('prodInputImage').value='/assets/images/image1.png'" style="background:var(--bg-800); border:none; color:var(--indigo-300); cursor:pointer; padding:0.1rem 0.4rem; border-radius:4px;">image1.png</button>
-            <button type="button" onclick="document.getElementById('prodInputImage').value='/assets/images/image2.png'" style="background:var(--bg-800); border:none; color:var(--indigo-300); cursor:pointer; padding:0.1rem 0.4rem; border-radius:4px;">image2.png</button>
-            <button type="button" onclick="document.getElementById('prodInputImage').value='/assets/images/profile.jpg'" style="background:var(--bg-800); border:none; color:var(--indigo-300); cursor:pointer; padding:0.1rem 0.4rem; border-radius:4px;">profile.jpg</button>
+          <label class="form-label">Gambar Thumbnail Produk</label>
+          <div style="display: flex; gap: 0.5rem; align-items: center;">
+            <input type="text" id="prodInputImage" class="form-input" placeholder="/assets/images/image1.png atau data:image/..." oninput="updateImagePreviewUI()">
+            <label for="prodFileInput" class="btn-sm btn-sm-primary" style="white-space: nowrap; cursor: pointer; padding: 0.7rem 0.875rem;">
+              📁 Upload Foto
+            </label>
+            <input type="file" id="prodFileInput" accept="image/*" style="display: none;" onchange="handleProductFileUpload(event)">
+          </div>
+
+          <div style="display: flex; align-items: center; justify-content: space-between; margin-top: 0.5rem;">
+            <div style="display: flex; gap: 0.5rem; font-size: 0.7rem; color: var(--slate-400);">
+              <span>Preset:</span>
+              <button type="button" onclick="setPresetImg('/assets/images/image1.png')" style="background:var(--bg-800); border:none; color:var(--indigo-300); cursor:pointer; padding:0.1rem 0.4rem; border-radius:4px;">image1.png</button>
+              <button type="button" onclick="setPresetImg('/assets/images/image2.png')" style="background:var(--bg-800); border:none; color:var(--indigo-300); cursor:pointer; padding:0.1rem 0.4rem; border-radius:4px;">image2.png</button>
+              <button type="button" onclick="setPresetImg('/assets/images/profile.jpg')" style="background:var(--bg-800); border:none; color:var(--indigo-300); cursor:pointer; padding:0.1rem 0.4rem; border-radius:4px;">profile.jpg</button>
+            </div>
+          </div>
+
+          <div id="prodImagePreviewBox" style="margin-top: 0.75rem; display: none; background: #000; border: 1px solid var(--bg-700); border-radius: 10px; overflow: hidden; padding: 0.5rem; text-align: center;">
+            <img id="prodImagePreview" src="" alt="Preview" style="max-height: 140px; max-width: 100%; object-fit: contain; border-radius: 6px;">
           </div>
         </div>
 
@@ -914,6 +927,42 @@
         </div>`).join('');
     }
 
+    // ── Image Upload & Preview Helpers ──
+    function handleProductFileUpload(e) {
+      const file = e.target.files && e.target.files[0];
+      if (!file) return;
+
+      if (file.size > 4 * 1024 * 1024) {
+        alert('Ukuran gambar terlalu besar (maksimal 4MB).');
+        return;
+      }
+
+      const reader = new FileReader();
+      reader.onload = (event) => {
+        const dataUrl = event.target.result;
+        document.getElementById('prodInputImage').value = dataUrl;
+        updateImagePreviewUI();
+      };
+      reader.readAsDataURL(file);
+    }
+
+    function setPresetImg(url) {
+      document.getElementById('prodInputImage').value = url;
+      updateImagePreviewUI();
+    }
+
+    function updateImagePreviewUI() {
+      const val = document.getElementById('prodInputImage').value.trim();
+      const box = document.getElementById('prodImagePreviewBox');
+      const img = document.getElementById('prodImagePreview');
+      if (val) {
+        img.src = val;
+        box.style.display = 'block';
+      } else {
+        box.style.display = 'none';
+      }
+    }
+
     // ── Open / Close Product Modal ──
     function onBtnTypeChange() {
       const btnType = document.getElementById('prodSelectBtnType').value;
@@ -962,6 +1011,7 @@
       }
 
       onBtnTypeChange();
+      updateImagePreviewUI();
       modal.style.display = 'flex';
     }
 
