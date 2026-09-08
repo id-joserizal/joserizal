@@ -983,6 +983,32 @@ export default function ${appNameVal.replace(/[^a-zA-Z0-9]/g, '') || 'CustomApp'
   const btnDeviceMobile = document.getElementById('btnDeviceMobile');
   const vibeWaLoadingOverlay = document.getElementById('vibeWaLoadingOverlay');
 
+  // Mobile View Switcher Elements
+  const vibeTabChat = document.getElementById('vibeTabChat');
+  const vibeTabPreview = document.getElementById('vibeTabPreview');
+  const vibePreviewBadge = document.getElementById('vibePreviewBadge');
+  const vibeFloatingChatBtn = document.getElementById('vibeFloatingChatBtn');
+
+  function setVibeMobileTab(tabName) {
+    if (!vibePreviewModal) return;
+    const container = vibePreviewModal.querySelector('.vibe-modal-container');
+    if (!container) return;
+    container.setAttribute('data-mobile-active-tab', tabName);
+
+    if (tabName === 'chat') {
+      if (vibeTabChat) vibeTabChat.classList.add('active');
+      if (vibeTabPreview) vibeTabPreview.classList.remove('active');
+    } else if (tabName === 'preview') {
+      if (vibeTabPreview) vibeTabPreview.classList.add('active');
+      if (vibeTabChat) vibeTabChat.classList.remove('active');
+      if (vibePreviewBadge) vibePreviewBadge.style.display = 'none';
+    }
+  }
+
+  if (vibeTabChat) vibeTabChat.addEventListener('click', () => setVibeMobileTab('chat'));
+  if (vibeTabPreview) vibeTabPreview.addEventListener('click', () => setVibeMobileTab('preview'));
+  if (vibeFloatingChatBtn) vibeFloatingChatBtn.addEventListener('click', () => setVibeMobileTab('chat'));
+
   // Session ID Management (unique per visitor session)
   let vibeSessionId = sessionStorage.getItem('vibe_session_id');
   if (!vibeSessionId) {
@@ -1000,6 +1026,7 @@ export default function ${appNameVal.replace(/[^a-zA-Z0-9]/g, '') || 'CustomApp'
     if (vibeBtn) {
       e.preventDefault();
       if (vibePreviewModal) {
+        setVibeMobileTab('chat');
         vibePreviewModal.classList.add('active');
         vibePreviewModal.setAttribute('aria-hidden', 'false');
         document.body.style.overflow = 'hidden';
@@ -1179,6 +1206,13 @@ export default function ${appNameVal.replace(/[^a-zA-Z0-9]/g, '') || 'CustomApp'
         if (vibePreviewIframe) {
           vibePreviewIframe.style.display = 'block';
           vibePreviewIframe.srcdoc = vibeCurrentHtml;
+        }
+
+        // On Mobile view: auto switch to preview tab so user sees their result immediately
+        if (window.innerWidth <= 900) {
+          setVibeMobileTab('preview');
+        } else if (vibePreviewBadge) {
+          vibePreviewBadge.style.display = 'inline-block';
         }
 
         // Show "Lanjutkan Pemesanan" button (since at least 1 result generated)

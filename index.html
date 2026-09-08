@@ -701,6 +701,16 @@ export default function WebsiteApp() {
         </div>
       </div>
 
+      <!-- Mobile View Switcher Tabs (Visible on Mobile Only) -->
+      <div class="vibe-mobile-tabs" id="vibeMobileTabs">
+        <button type="button" class="vibe-tab-btn active" id="vibeTabChat" data-tab="chat">
+          💬 Chat AI
+        </button>
+        <button type="button" class="vibe-tab-btn" id="vibeTabPreview" data-tab="preview">
+          👁️ Preview Web <span class="vibe-tab-badge" id="vibePreviewBadge" style="display:none;">Baru!</span>
+        </button>
+      </div>
+
       <!-- Modal Body (2 Columns Layout) -->
       <div class="vibe-modal-body">
 
@@ -767,6 +777,10 @@ export default function WebsiteApp() {
 
         <!-- Column 2: Sandboxed Iframe Preview Canvas -->
         <div class="vibe-preview-col">
+          <!-- Floating Chat Button for Mobile View -->
+          <button type="button" class="vibe-floating-chat-btn" id="vibeFloatingChatBtn" title="Ubah Desain">
+            💬 Ubah Desain (Chat)
+          </button>
           <!-- Browser Chrome Header -->
           <div class="vibe-chrome-header">
             <div class="vibe-chrome-dots">
