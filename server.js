@@ -16,8 +16,8 @@ app.use(express.urlencoded({ extended: true, limit: '10mb' }));
 // Static files directory
 app.use(express.static(__dirname));
 
-// Ensure data directory exists for JSON DB persistence
-const DATA_DIR = path.join(__dirname, 'data');
+// Ensure data directory exists for JSON DB persistence (uses /tmp on Vercel)
+const DATA_DIR = process.env.VERCEL ? path.join('/tmp', 'data') : path.join(__dirname, 'data');
 const DB_FILE = path.join(DATA_DIR, 'sessions.json');
 
 if (!fs.existsSync(DATA_DIR)) {
@@ -487,11 +487,15 @@ app.get('*', (req, res) => {
   res.sendFile(path.join(__dirname, 'index.html'));
 });
 
-// Start listening
-app.listen(PORT, () => {
-  console.log(`====================================================`);
-  console.log(`🚀 Ratakiri Catalog Server is running on port ${PORT}`);
-  console.log(`🌐 Website URL: http://localhost:${PORT}`);
-  console.log(`🛠️ Admin Dashboard: http://localhost:${PORT}/admin`);
-  console.log(`====================================================`);
-});
+// Start listening if not running as serverless function on Vercel
+if (!process.env.VERCEL) {
+  app.listen(PORT, () => {
+    console.log(`====================================================`);
+    console.log(`🚀 Ratakiri Catalog Server is running on port ${PORT}`);
+    console.log(`🌐 Website URL: http://localhost:${PORT}`);
+    console.log(`🛠️ Admin Dashboard: http://localhost:${PORT}/admin`);
+    console.log(`====================================================`);
+  });
+}
+
+module.exports = app;
