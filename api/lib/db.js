@@ -1,4 +1,5 @@
 const fs = require('fs');
+const GEMINI_MODEL = 'gemini-3.6-flash';
 const path = require('path');
 
 // Ensure data directory exists for JSON DB persistence (uses /tmp on Vercel)
@@ -209,7 +210,7 @@ async function generateHtmlWithGemini(prompt, previousHtml, history = []) {
     parts: [{ text: currentPromptText }]
   });
 
-  const apiUrl = `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:generateContent?key=${apiKey}`;
+  const apiUrl = `https://generativelanguage.googleapis.com/v1beta/models/${GEMINI_MODEL}:generateContent?key=${apiKey}`;
 
   try {
     const response = await fetch(apiUrl, {
@@ -249,7 +250,7 @@ async function generateSummaryWithGemini(history, currentPrompt) {
     return `Customer membutuhkan pembuatan website custom berdasarkan deskripsi: "${userPrompts}". Desain mengusung tampilan modern, profesional, dan responsive dengan tema warna elegan, fitur navigasi lengkap, serta integrasi tombol chat WhatsApp.`;
   }
 
-  const apiUrl = `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:generateContent?key=${apiKey}`;
+  const apiUrl = `https://generativelanguage.googleapis.com/v1beta/models/${GEMINI_MODEL}:generateContent?key=${apiKey}`;
 
   try {
     const response = await fetch(apiUrl, {
