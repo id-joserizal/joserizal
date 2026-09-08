@@ -105,72 +105,51 @@
         </div>
 
         <div id="produk" class="editions-grid">
-          <!-- Card 1: Developer App -->
-          <div class="edition-card">
-            <span class="edition-badge">FEATURED SERVICE</span>
-            <div class="edition-image-box">
-              <img src="/assets/images/image1.png" alt="Developer App" class="edition-img">
-            </div>
-            <div class="edition-content">
-              <div>
-                <h3 class="edition-name">DEVELOPER APP</h3>
-                <ul class="edition-desc-list">
-                  <li>&bull; Web & Mobile App Custom</li>
-                  <li>&bull; Clean Architecture & Fast Performance</li>
-                  <li>&bull; API Integration & Deployment</li>
-                </ul>
-              </div>
-              <div class="edition-footer-row" style="flex-wrap: wrap; gap: 0.5rem;">
-                <span class="edition-price">CUSTOM</span>
-                <button type="button" id="btnOpenVibePreview" class="btn-dark-card btn-open-vibe-preview" style="background: linear-gradient(135deg, #D4AF37, #F59E0B); border: none; color: #0E0E0E; font-weight: 700;">COBA DESAIN DULU</button>
-              </div>
-            </div>
-          </div>
-
-          <!-- Card 2: Desain UI/UX & Branding -->
-          <div class="edition-card">
-            <span class="edition-badge">MOST POPULAR</span>
-            <div class="edition-image-box">
-              <img src="/assets/images/profile.jpg" alt="Desain UI/UX & Branding" class="edition-img">
-            </div>
-            <div class="edition-content">
-              <div>
-                <h3 class="edition-name">DESAIN UI/UX & BRANDING</h3>
-                <ul class="edition-desc-list">
-                  <li>&bull; Desain Antarmuka UI/UX Modern</li>
-                  <li>&bull; Identitas Visual & System Design</li>
-                  <li>&bull; High-Fidelity Prototype Ready</li>
-                </ul>
-              </div>
-              <div class="edition-footer-row">
-                <span class="edition-price">CUSTOM</span>
-                <button type="button" class="btn-dark-card btn-open-web-builder">PESAN DESAIN</button>
-              </div>
-            </div>
-          </div>
-
-          <!-- Card 3: Ebook & Guide -->
-          <div class="edition-card">
-            <span class="edition-badge">DIGITAL PRODUCT</span>
-            <div class="edition-image-box">
-              <img src="/assets/images/image2.png" alt="Ebook & Guide" class="edition-img">
-            </div>
-            <div class="edition-content">
-              <div>
-                <h3 class="edition-name">EBOOK & GUIDE KREATIF</h3>
-                <ul class="edition-desc-list">
-                  <li>&bull; Panduan Pemrograman & Desain</li>
-                  <li>&bull; Case Study & Source Code Lengkap</li>
-                  <li>&bull; Akses Gratis Update Selamanya</li>
-                </ul>
-              </div>
-              <div class="edition-footer-row">
-                <span class="edition-price">EBOOK</span>
-                <a href="#footer" class="btn-dark-card">BELI EBOOK</a>
-              </div>
-            </div>
-          </div>
+          <!-- Produk dimuat dinamis dari API -->
         </div>
+
+        <!-- Script loader produk — berdiri sendiri, independen dari main.js -->
+        <script>
+          (function loadProductsInline() {
+            var grid = document.getElementById('produk');
+            if (!grid) return;
+
+            function buildBtn(p) {
+              if (p.btn_type === 'vibe_preview') {
+                var txt = (p.btn_text || 'COBA DESAIN DULU').replace(/^⚡\s*/, '');
+                return '<button type="button" class="btn-dark-card btn-open-vibe-preview" style="background:linear-gradient(135deg,#D4AF37,#F59E0B);border:none;color:#0E0E0E;font-weight:700;">' + txt + '</button>';
+              }
+              if (p.btn_type === 'web_builder') {
+                return '<button type="button" class="btn-dark-card btn-open-web-builder">' + (p.btn_text || 'PESAN DESAIN') + '</button>';
+              }
+              return '<a href="' + (p.btn_link || '#footer') + '" class="btn-dark-card">' + (p.btn_text || 'DETAIL') + '</a>';
+            }
+
+            function renderCards(products) {
+              if (!Array.isArray(products) || products.length === 0) return;
+              grid.innerHTML = products.map(function(p) {
+                var features = (p.features || []).map(function(f) { return '<li>&bull; ' + f + '</li>'; }).join('');
+                return '<div class="edition-card">' +
+                  '<span class="edition-badge">' + (p.badge || 'PRODUCT') + '</span>' +
+                  '<div class="edition-image-box"><img src="' + (p.image || '/assets/images/image1.png') + '" alt="' + p.name + '" class="edition-img"></div>' +
+                  '<div class="edition-content">' +
+                    '<div><h3 class="edition-name">' + p.name + '</h3><ul class="edition-desc-list">' + features + '</ul></div>' +
+                    '<div class="edition-footer-row" style="flex-wrap:wrap;gap:0.5rem;">' +
+                      '<span class="edition-price">' + (p.price || 'CUSTOM') + '</span>' +
+                      buildBtn(p) +
+                    '</div>' +
+                  '</div>' +
+                '</div>';
+              }).join('');
+            }
+
+            // Fetch langsung, no-cache, no-store
+            fetch('/api/products?t=' + Date.now(), { cache: 'no-store' })
+              .then(function(r) { return r.ok ? r.json() : null; })
+              .then(function(data) { if (data) renderCards(data); })
+              .catch(function(e) { console.warn('Gagal load produk:', e); });
+          })();
+        </script>
       </div>
     </section>
 

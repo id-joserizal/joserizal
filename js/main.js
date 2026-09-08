@@ -1019,70 +1019,7 @@ export default function ${appNameVal.replace(/[^a-zA-Z0-9]/g, '') || 'CustomApp'
     }
   });
 
-  // ── Load Dynamic Products from API ──
-  async function loadDynamicProducts() {
-    const produkContainer = document.getElementById('produk');
-    if (!produkContainer) return;
-
-    function renderProductsHTML(products) {
-      if (!Array.isArray(products) || products.length === 0) return;
-
-      produkContainer.innerHTML = products.map(p => {
-        let btnHtml = '';
-        if (p.btn_type === 'vibe_preview') {
-          const cleanText = (p.btn_text || 'COBA DESAIN DULU').replace(/^⚡\s*/, '');
-          btnHtml = `<button type="button" class="btn-dark-card btn-open-vibe-preview" style="background: linear-gradient(135deg, #D4AF37, #F59E0B); border: none; color: #0E0E0E; font-weight: 700;">${cleanText}</button>`;
-        } else if (p.btn_type === 'web_builder') {
-          btnHtml = `<button type="button" class="btn-dark-card btn-open-web-builder">${p.btn_text || 'PESAN DESAIN'}</button>`;
-        } else {
-          btnHtml = `<a href="${p.btn_link || '#footer'}" class="btn-dark-card">${p.btn_text || 'DETAIL'}</a>`;
-        }
-
-        const featuresList = (p.features || []).map(f => `<li>&bull; ${f}</li>`).join('');
-
-        return `
-          <div class="edition-card">
-            <span class="edition-badge">${p.badge || 'PRODUCT'}</span>
-            <div class="edition-image-box">
-              <img src="${p.image || '/assets/images/image1.png'}" alt="${p.name}" class="edition-img">
-            </div>
-            <div class="edition-content">
-              <div>
-                <h3 class="edition-name">${p.name}</h3>
-                <ul class="edition-desc-list">
-                  ${featuresList}
-                </ul>
-              </div>
-              <div class="edition-footer-row" style="flex-wrap: wrap; gap: 0.5rem;">
-                <span class="edition-price">${p.price || 'CUSTOM'}</span>
-                ${btnHtml}
-              </div>
-            </div>
-          </div>`;
-      }).join('');
-    }
-
-    // Hapus cache lama supaya tidak stale
-    try { localStorage.removeItem('ratakiri_public_products'); } catch (e) {}
-
-    // Fetch fresh products from API — selalu ambil data terbaru
-    try {
-      const res = await fetch('/api/products?t=' + Date.now(), {
-        cache: 'no-store',
-        headers: { 'Cache-Control': 'no-cache, no-store, must-revalidate', 'Pragma': 'no-cache' }
-      });
-      if (!res.ok) return;
-
-      const products = await res.json();
-      if (Array.isArray(products) && products.length > 0) {
-        renderProductsHTML(products);
-      }
-    } catch (err) {
-      console.warn('Gagal memuat produk dinamis dari server:', err);
-    }
-  }
-
-  loadDynamicProducts();
+  // Produk dimuat oleh inline script di index.html (lebih reliable)
 
 
   // Close Vibe Preview Modal
